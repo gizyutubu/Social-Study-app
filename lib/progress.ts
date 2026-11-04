@@ -8,6 +8,28 @@ export type QuestionRecord = {
   lastAnsweredAt: string;
 };
 
+export type SavedQuizSession = {
+  mode: "input" | "choice";
+  category: string;
+  difficulty: string;
+  questionCount: number | "すべて";
+  questionIds: string[];
+  choicesByQuestion: Record<string, string[]>;
+  currentIndex: number;
+  sessionCorrect: number;
+  sessionAnswered: number;
+  sessionExperience: number;
+  sessionPoints: number;
+  answerState: {
+    correct: boolean;
+    submitted: string;
+    experienceGained: number;
+    pointsGained: number;
+  } | null;
+  draft: string;
+  savedAt: string;
+};
+
 export type ProgressState = {
   records: Record<string, QuestionRecord>;
   totalAttempts: number;
@@ -16,6 +38,7 @@ export type ProgressState = {
   bestStreak: number;
   experience: number;
   points: number;
+  activeSession: SavedQuizSession | null;
 };
 
 export const emptyProgress: ProgressState = {
@@ -26,6 +49,7 @@ export const emptyProgress: ProgressState = {
   bestStreak: 0,
   experience: 0,
   points: 0,
+  activeSession: null,
 };
 
 export async function loadProgress(): Promise<ProgressState> {
@@ -41,6 +65,7 @@ export async function loadProgress(): Promise<ProgressState> {
       bestStreak: parsed.bestStreak ?? 0,
       experience: parsed.experience ?? 0,
       points: parsed.points ?? 0,
+      activeSession: parsed.activeSession ?? null,
     };
   } catch {
     return emptyProgress;
@@ -82,6 +107,7 @@ export function recordAnswer(
     bestStreak: Math.max(progress.bestStreak, streak),
     experience: progress.experience + reward.experience,
     points: progress.points + reward.points,
+    activeSession: progress.activeSession,
   };
   return updated;
 }

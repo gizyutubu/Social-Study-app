@@ -32,6 +32,7 @@ import {
   saveProgress,
   titleForPoints,
   type ProgressState,
+  type SavedQuizSession,
 } from "@/lib/progress";
 
 type QuizMode = "input" | "choice";
@@ -177,6 +178,35 @@ export default function HomeScreen() {
   const currentTitle = titleForPoints(progress.points);
   const nextTitle = nextTitleForPoints(progress.points);
 
+  const buildSavedSession = (
+    questionsToSave: Question[],
+    index: number,
+    savedAnswerState: AnswerState | null,
+    savedDraft: string,
+    savedCorrect: number,
+    savedAnswered: number,
+    savedExperience: number,
+    savedPoints: number,
+  ): SavedQuizSession => ({
+    mode,
+    category,
+    difficulty,
+    questionCount,
+    questionIds: questionsToSave.map((question) => question.id),
+    choicesByQuestion: questionsToSave.reduce<Record<string, string[]>>((result, question) => {
+      result[question.id] = question.choices;
+      return result;
+    }, {}),
+    currentIndex: index,
+    sessionCorrect: savedCorrect,
+    sessionAnswered: savedAnswered,
+    sessionExperience: savedExperience,
+    sessionPoints: savedPoints,
+    answerState: savedAnswerState,
+    draft: savedDraft,
+    savedAt: new Date().toISOString(),
+  });
+
   const startQuiz = () => {
     const shuffledQuestions = shuffle(availableQuestions);
     const selectedQuestions = questionCount === "すべて"
@@ -205,6 +235,41 @@ export default function HomeScreen() {
     setSessionAnswered(0);
     setSessionExperience(0);
     setSessionPoints(0);
+    const nextProgress = {
+      ...progress,
+      activeSession: buildSavedSession(randomizedQuestions, 0, null, "", 0, 0, 0, 0),
+    };
+    setProgress(nextProgress);
+    void saveProgress(nextProgress);
+    setScreen("quiz");
+  };
+
+  const resumeQuiz = () => {
+    const saved = progress.activeSession;
+    if (!saved) return;
+    const restoredQuestions = saved.questionIds
+      .map((id) => {
+        const question = questions.find((candidate) => candidate.id === id);
+        if (!question) return null;
+        return {
+          ...question,
+          choices: saved.choicesByQuestion[id] ?? shuffle(question.choices),
+        };
+      })
+      .filter((question): question is Question => Boolean(question));
+    if (!restoredQuestions.length) return;
+    setMode(saved.mode);
+    setCategory(saved.category as CategoryFilter);
+    setDifficulty(saved.difficulty as DifficultyFilter);
+    setQuestionCount(saved.questionCount as QuestionCount);
+    setSessionQuestions(restoredQuestions);
+    setCurrentIndex(Math.min(saved.currentIndex, restoredQuestions.length - 1));
+    setAnswerState(saved.answerState);
+    setDraft(saved.draft);
+    setSessionCorrect(saved.sessionCorrect);
+    setSessionAnswered(saved.sessionAnswered);
+    setSessionExperience(saved.sessionExperience);
+    setSessionPoints(saved.sessionPoints);
     setScreen("quiz");
   };
 
@@ -216,23 +281,52 @@ export default function HomeScreen() {
     const nextStreak = correct ? progress.streak + 1 : 0;
     const reward = rewardForAnswer(correct, nextStreak);
     const nextProgress = recordAnswer(progress, currentQuestion.id, correct);
-    setProgress(nextProgress);
-    void saveProgress(nextProgress);
-    setAnswerState({ correct, submitted: value, experienceGained: reward.experience, pointsGained: reward.points });
-    setSessionAnswered((count) => count + 1);
-    if (correct) setSessionCorrect((count) => count + 1);
-    setSessionExperience((total) => total + reward.experience);
-    setSessionPoints((total) => total + reward.points);
+    const nextAnswerState = { correct, submitted: value, experienceGained: reward.experience, pointsGained: reward.points };
+    const nextAnswered = sessionAnswered + 1;
+    const nextCorrect = sessionCorrect + (correct ? 1 : 0);
+    const nextExperience = sessionExperience + reward.experience;
+    const nextPoints = sessionPoints + reward.points;
+    const savedProgress = {
+      ...nextProgress,
+      activeSession: buildSavedSession(sessionQuestions, currentIndex, nextAnswerState, draft, nextCorrect, nextAnswered, nextExperience, nextPoints),
+    };
+    setProgress(savedProgress);
+    void saveProgress(savedProgress);
+    setAnswerState(nextAnswerState);
+    setSessionAnswered(nextAnswered);
+    setSessionCorrect(nextCorrect);
+    setSessionExperience(nextExperience);
+    setSessionPoints(nextPoints);
   };
 
   const moveNext = () => {
     if (currentIndex >= sessionQuestions.length - 1) {
+      const finishedProgress = { ...progress, activeSession: null };
+      setProgress(finishedProgress);
+      void saveProgress(finishedProgress);
       setScreen("summary");
       return;
     }
-    setCurrentIndex((index) => index + 1);
+    const nextIndex = currentIndex + 1;
+    setCurrentIndex(nextIndex);
     setAnswerState(null);
     setDraft("");
+    const nextProgress = {
+      ...progress,
+      activeSession: buildSavedSession(sessionQuestions, nextIndex, null, "", sessionCorrect, sessionAnswered, sessionExperience, sessionPoints),
+    };
+    setProgress(nextProgress);
+    void saveProgress(nextProgress);
+  };
+
+  const pauseQuiz = () => {
+    const pausedProgress = {
+      ...progress,
+      activeSession: buildSavedSession(sessionQuestions, currentIndex, answerState, draft, sessionCorrect, sessionAnswered, sessionExperience, sessionPoints),
+    };
+    setProgress(pausedProgress);
+    void saveProgress(pausedProgress);
+    setScreen("setup");
   };
 
   const returnToSetup = () => {
@@ -267,8 +361,8 @@ export default function HomeScreen() {
               showsVerticalScrollIndicator={false}
             >
             <View style={styles.quizHeader}>
-              <Pressable onPress={returnToSetup} style={styles.ghostButton}>
-                <Text style={styles.ghostButtonText}>条件変更</Text>
+              <Pressable onPress={pauseQuiz} style={styles.ghostButton}>
+                <Text style={styles.ghostButtonText}>中断して保存</Text>
               </Pressable>
               <Text style={styles.progressCount}>
                 {currentIndex + 1} / {sessionQuestions.length}
@@ -507,6 +601,22 @@ export default function HomeScreen() {
           <StatChip label="ベスト連続" value={`${progress.bestStreak}問`} accent={COLORS.amber} />
         </View>
 
+        {progress.activeSession && (
+          <View style={styles.resumePanel}>
+            <View style={styles.resumeCopy}>
+              <Text style={styles.resumeEyebrow}>CONTINUE STUDY</Text>
+              <Text style={styles.resumeTitle}>中断した学習を再開</Text>
+              <Text style={styles.resumeText}>
+                {progress.activeSession.currentIndex + 1} / {progress.activeSession.questionIds.length}問 ・ {progress.activeSession.mode === "choice" ? "4択" : "入力"}
+              </Text>
+            </View>
+            <Pressable onPress={resumeQuiz} style={styles.resumeButton}>
+              <Text style={styles.resumeButtonText}>再開</Text>
+              <Text style={styles.resumeButtonArrow}>→</Text>
+            </Pressable>
+          </View>
+        )}
+
         <View style={styles.setupCard}>
           <SectionTitle eyebrow="01 / MODE" title="答え方を選ぶ" />
           <View style={styles.modeRow}>
@@ -606,6 +716,14 @@ const styles = StyleSheet.create({
   statChip: { flex: 1, paddingVertical: 12, paddingHorizontal: 10, backgroundColor: COLORS.card, borderRadius: 14, borderWidth: 1, borderColor: COLORS.line },
   statLabel: { color: COLORS.muted, fontSize: 10, fontWeight: "700", marginBottom: 3 },
   statValue: { fontSize: 18, fontWeight: "900" },
+  resumePanel: { borderRadius: 20, padding: 16, backgroundColor: COLORS.blueSoft, borderWidth: 1, borderColor: "#CFD9FF", flexDirection: "row", alignItems: "center", gap: 14 },
+  resumeCopy: { flex: 1, gap: 3 },
+  resumeEyebrow: { color: COLORS.blue, fontSize: 9, fontWeight: "900", letterSpacing: 1.4 },
+  resumeTitle: { color: COLORS.ink, fontSize: 16, fontWeight: "900" },
+  resumeText: { color: COLORS.muted, fontSize: 11, marginTop: 3 },
+  resumeButton: { backgroundColor: COLORS.blue, paddingHorizontal: 14, paddingVertical: 12, borderRadius: 13, flexDirection: "row", alignItems: "center", gap: 8 },
+  resumeButtonText: { color: "#FFFFFF", fontSize: 13, fontWeight: "900" },
+  resumeButtonArrow: { color: "#FFFFFF", fontSize: 17, fontWeight: "800" },
   setupCard: { backgroundColor: COLORS.card, borderRadius: 22, borderWidth: 1, borderColor: COLORS.line, padding: 16, gap: 14 },
   sectionTitleWrap: { gap: 3 },
   sectionTitle: { color: COLORS.ink, fontSize: 18, fontWeight: "900" },
