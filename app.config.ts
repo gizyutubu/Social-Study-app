@@ -59,9 +59,10 @@ const publicRuntime = {
   apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL ?? "",
 };
 
-const config: ExpoConfig = {
+const config: ExpoConfig & { logoUrl: string } = {
   name: env.appName,
   slug: env.appSlug,
+  logoUrl: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663937451234/aoAzUdnMAuillrhC.png",
   version: "1.0.0",
   extra: publicRuntime,
   orientation: "portrait",
