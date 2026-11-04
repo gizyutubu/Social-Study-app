@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -170,6 +171,7 @@ export default function HomeScreen() {
 
   const submitAnswer = (value: string) => {
     if (!currentQuestion || answerState) return;
+    Keyboard.dismiss();
     const accepted = currentQuestion.acceptedAnswers ?? [currentQuestion.answer];
     const correct = accepted.some((answer) => normalizeAnswer(answer) === normalizeAnswer(value));
     const nextProgress = recordAnswer(progress, currentQuestion.id, correct);
@@ -215,11 +217,12 @@ export default function HomeScreen() {
           style={styles.flex}
           behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
-          <ScrollView
-            contentContainerStyle={styles.quizScroll}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          >
+          <View style={styles.quizScreen}>
+            <ScrollView
+              contentContainerStyle={[styles.quizScroll, answerState && styles.quizScrollWithAction]}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
             <View style={styles.quizHeader}>
               <Pressable onPress={returnToSetup} style={styles.ghostButton}>
                 <Text style={styles.ghostButtonText}>条件変更</Text>
@@ -330,7 +333,18 @@ export default function HomeScreen() {
                   <Text style={styles.answerRevealText}>{currentQuestion.answer}</Text>
                 </View>
                 <Text style={styles.explanationText}>{currentQuestion.explanation}</Text>
-                <Pressable onPress={moveNext} style={styles.nextButton}>
+              </View>
+            )}
+            </ScrollView>
+            {answerState && (
+              <View style={styles.quizActionBar}>
+                <View style={styles.quizActionHint}>
+                  <Text style={styles.quizActionHintTitle}>
+                    {answerState.correct ? "正解を記録しました" : "解説を確認しましたか？"}
+                  </Text>
+                  <Text style={styles.quizActionHintText}>ボタンで次の問題へ進めます</Text>
+                </View>
+                <Pressable onPress={moveNext} style={styles.nextButtonFixed}>
                   <Text style={styles.nextButtonText}>
                     {currentIndex >= sessionQuestions.length - 1 ? "結果を見る" : "次の一問へ"}
                   </Text>
@@ -338,7 +352,7 @@ export default function HomeScreen() {
                 </Pressable>
               </View>
             )}
-          </ScrollView>
+          </View>
         </KeyboardAvoidingView>
       </ScreenContainer>
     );
@@ -467,10 +481,12 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  quizScreen: { flex: 1, backgroundColor: COLORS.paper },
   loadingScreen: { flex: 1, alignItems: "center", justifyContent: "center", gap: 16, backgroundColor: COLORS.paper },
   loadingText: { color: COLORS.muted, fontSize: 13 },
   setupScroll: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 36, gap: 18, backgroundColor: COLORS.paper },
   quizScroll: { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 36, gap: 18, backgroundColor: COLORS.paper, flexGrow: 1 },
+  quizScrollWithAction: { paddingBottom: 18 },
   brandRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   brandCopy: { flex: 1 },
   logoMark: { width: 42, height: 42, borderRadius: 13, backgroundColor: COLORS.blue, alignItems: "center", justifyContent: "center", shadowColor: COLORS.blue, shadowOpacity: 0.2, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 },
@@ -566,7 +582,11 @@ const styles = StyleSheet.create({
   answerRevealLabel: { color: COLORS.muted, fontSize: 10, fontWeight: "800" },
   answerRevealText: { color: COLORS.ink, fontSize: 19, fontWeight: "900" },
   explanationText: { color: COLORS.ink, fontSize: 13, lineHeight: 20 },
-  nextButton: { backgroundColor: COLORS.ink, borderRadius: 14, minHeight: 50, paddingHorizontal: 15, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  quizActionBar: { minHeight: 74, paddingHorizontal: 20, paddingVertical: 10, backgroundColor: COLORS.card, borderTopWidth: 1, borderTopColor: COLORS.line, flexDirection: "row", alignItems: "center", gap: 12, shadowColor: COLORS.ink, shadowOpacity: 0.08, shadowRadius: 10, shadowOffset: { width: 0, height: -4 }, elevation: 5 },
+  quizActionHint: { flex: 1, gap: 2 },
+  quizActionHintTitle: { color: COLORS.ink, fontSize: 12, fontWeight: "900" },
+  quizActionHintText: { color: COLORS.muted, fontSize: 10 },
+  nextButtonFixed: { backgroundColor: COLORS.ink, borderRadius: 14, minHeight: 50, paddingHorizontal: 15, flexDirection: "row", alignItems: "center", justifyContent: "space-between", minWidth: 142 },
   nextButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "900" },
   nextButtonArrow: { color: "#A8B9FF", fontSize: 22, fontWeight: "800" },
   summaryHero: { backgroundColor: COLORS.blueSoft, borderRadius: 24, borderWidth: 1, borderColor: "#CFD9FF", padding: 22, alignItems: "center", gap: 8, marginTop: 8 },
