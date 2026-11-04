@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { BlurView } from "expo-blur";
 import {
   ActivityIndicator,
   Keyboard,
@@ -7,9 +8,11 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  type StyleProp,
   Text,
   TextInput,
   View,
+  type ViewStyle,
 } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import {
@@ -97,10 +100,26 @@ function formatFilter(value: string): string {
 
 function StatChip({ label, value, accent = COLORS.blue }: { label: string; value: string; accent?: string }) {
   return (
-    <View style={styles.statChip}>
+    <GlassSurface style={styles.statChip} intensity={28}>
       <Text style={styles.statLabel}>{label}</Text>
       <Text style={[styles.statValue, { color: accent }]}>{value}</Text>
-    </View>
+    </GlassSurface>
+  );
+}
+
+function GlassSurface({
+  children,
+  style,
+  intensity = 32,
+}: {
+  children: ReactNode;
+  style?: StyleProp<ViewStyle>;
+  intensity?: number;
+}) {
+  return (
+    <BlurView intensity={intensity} tint="light" style={[styles.glassSurface, style]}>
+      {children}
+    </BlurView>
   );
 }
 
@@ -609,7 +628,7 @@ export default function HomeScreen() {
           <Text style={styles.heroSubtitle}>教材から厳選した一問で、知識をすばやく定着。</Text>
         </View>
 
-        <View style={styles.rankPanel}>
+        <GlassSurface style={styles.rankPanel} intensity={38}>
           <View style={styles.levelBadge}>
             <Text style={styles.levelBadgeLabel}>LV</Text>
             <Text style={styles.levelBadgeValue}>{currentLevel}</Text>
@@ -626,7 +645,7 @@ export default function HomeScreen() {
               Lv.{currentLevel}「{currentLevelName}」 ・ {nextTitle ? `あと${nextTitle.required - progress.points}ptで「${nextTitle.title}」` : "全称号を解放中"}
             </Text>
           </View>
-        </View>
+        </GlassSurface>
 
         <View style={styles.setupCard}>
           <SectionTitle eyebrow="PROFILE" title="称号をカスタマイズ" />
@@ -645,7 +664,7 @@ export default function HomeScreen() {
         </View>
 
         {progress.activeSession && (
-          <View style={styles.resumePanel}>
+          <GlassSurface style={styles.resumePanel} intensity={34}>
             <View style={styles.resumeCopy}>
               <Text style={styles.resumeEyebrow}>KEEP YOUR PLACE</Text>
               <Text style={styles.resumeTitle}>中断した学習を再開</Text>
@@ -657,10 +676,10 @@ export default function HomeScreen() {
               <Text style={styles.resumeButtonText}>再開</Text>
               <Text style={styles.resumeButtonArrow}>→</Text>
             </Pressable>
-          </View>
+          </GlassSurface>
         )}
 
-        <View style={styles.weaknessPanel}>
+        <GlassSurface style={styles.weaknessPanel} intensity={34}>
           <View style={styles.weaknessCopy}>
             <Text style={styles.weaknessEyebrow}>REVIEW LIST</Text>
             <Text style={styles.weaknessTitle}>弱点克服モード</Text>
@@ -671,7 +690,7 @@ export default function HomeScreen() {
           <Pressable disabled={!weakQuestionCount} onPress={startWeaknessQuiz} style={[styles.weaknessToggle, !weakQuestionCount && styles.weaknessToggleDisabled]}>
             <Text style={[styles.weaknessToggleText, !weakQuestionCount && styles.weaknessToggleTextDisabled]}>{weakQuestionCount ? "まとめて解く" : "まだなし"}</Text>
           </Pressable>
-        </View>
+        </GlassSurface>
 
         <View style={styles.setupCard}>
           <SectionTitle eyebrow="01 / MODE" title="答え方を選ぶ" />
@@ -718,7 +737,7 @@ export default function HomeScreen() {
           </ScrollView>
         </View>
 
-        <View style={styles.startPanel}>
+        <GlassSurface style={styles.startPanel} intensity={36}>
           <View style={styles.startPanelCopy}>
             <Text style={styles.startPanelEyebrow}>SET A SESSION</Text>
             <Text style={styles.startPanelTitle}>{availableQuestions.length ? `${questionCount === "すべて" ? availableQuestions.length : Math.min(questionCount, availableQuestions.length)}問からスタート` : "対象の問題はありません"}</Text>
@@ -728,7 +747,7 @@ export default function HomeScreen() {
             <Text style={styles.startButtonText}>学習開始</Text>
             <Text style={styles.startButtonArrow}>→</Text>
           </Pressable>
-        </View>
+        </GlassSurface>
 
         <Text style={styles.sourceText}>出典：添付教材「中学社会総合対策まとめ」の記述・用語・人物史500問を収録</Text>
       </ScrollView>
@@ -738,6 +757,7 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  glassSurface: { overflow: "hidden" },
   quizScreen: { flex: 1, backgroundColor: COLORS.paper },
   loadingScreen: { flex: 1, alignItems: "center", justifyContent: "center", gap: 16, backgroundColor: COLORS.paper },
   loadingText: { color: COLORS.muted, fontSize: 13 },
@@ -757,7 +777,7 @@ const styles = StyleSheet.create({
   eyebrow: { color: COLORS.blue, fontSize: 10, fontWeight: "900", letterSpacing: 1.7 },
   heroTitle: { color: COLORS.ink, fontSize: 30, fontWeight: "900", letterSpacing: -0.7 },
   heroSubtitle: { color: COLORS.muted, fontSize: 14, lineHeight: 21 },
-  rankPanel: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: COLORS.card, borderRadius: 18, borderWidth: 1, borderColor: COLORS.line, padding: 13, shadowColor: "#77746D", shadowOpacity: 0.12, shadowRadius: 16, shadowOffset: { width: 0, height: 7 }, elevation: 2 },
+  rankPanel: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: "rgba(255,255,255,0.32)", borderRadius: 18, borderWidth: 1, borderColor: COLORS.line, padding: 13, shadowColor: "#77746D", shadowOpacity: 0.12, shadowRadius: 16, shadowOffset: { width: 0, height: 7 }, elevation: 2 },
   levelBadge: { width: 52, height: 52, borderRadius: 8, backgroundColor: COLORS.blue, alignItems: "center", justifyContent: "center" },
   levelBadgeLabel: { color: "#FBEDE8", fontSize: 9, fontWeight: "900", letterSpacing: 1 },
   levelBadgeValue: { color: "#FFFFFF", fontSize: 23, fontWeight: "900", lineHeight: 25 },
@@ -773,7 +793,7 @@ const styles = StyleSheet.create({
   statLabel: { color: COLORS.muted, fontSize: 10, fontWeight: "700", marginBottom: 3 },
   statValue: { fontSize: 18, fontWeight: "900" },
   cardHint: { color: COLORS.muted, fontSize: 11, lineHeight: 17 },
-  weaknessPanel: { borderRadius: 18, padding: 16, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.line, flexDirection: "row", alignItems: "center", gap: 14, shadowColor: "#77746D", shadowOpacity: 0.1, shadowRadius: 15, shadowOffset: { width: 0, height: 7 }, elevation: 2 },
+  weaknessPanel: { borderRadius: 18, padding: 16, backgroundColor: "rgba(255,255,255,0.34)", borderWidth: 1, borderColor: COLORS.line, flexDirection: "row", alignItems: "center", gap: 14, shadowColor: "#77746D", shadowOpacity: 0.1, shadowRadius: 15, shadowOffset: { width: 0, height: 7 }, elevation: 2 },
   weaknessPanelSelected: { backgroundColor: COLORS.amberSoft, borderColor: "#F0D59B" },
   weaknessCopy: { flex: 1, gap: 3 },
   weaknessEyebrow: { color: COLORS.amber, fontSize: 9, fontWeight: "900", letterSpacing: 1.4 },
@@ -785,7 +805,7 @@ const styles = StyleSheet.create({
   weaknessToggleText: { color: COLORS.muted, fontSize: 13, fontWeight: "900" },
   weaknessToggleTextSelected: { color: "#FFFFFF" },
   weaknessToggleTextDisabled: { color: COLORS.muted },
-  resumePanel: { borderRadius: 18, padding: 16, backgroundColor: "rgba(255,255,255,0.66)", borderWidth: 1, borderColor: "rgba(255,255,255,0.92)", flexDirection: "row", alignItems: "center", gap: 14, shadowColor: "#77746D", shadowOpacity: 0.1, shadowRadius: 15, shadowOffset: { width: 0, height: 7 }, elevation: 2 },
+  resumePanel: { borderRadius: 18, padding: 16, backgroundColor: "rgba(255,255,255,0.34)", borderWidth: 1, borderColor: "rgba(255,255,255,0.92)", flexDirection: "row", alignItems: "center", gap: 14, shadowColor: "#77746D", shadowOpacity: 0.1, shadowRadius: 15, shadowOffset: { width: 0, height: 7 }, elevation: 2 },
   resumeCopy: { flex: 1, gap: 3 },
   resumeEyebrow: { color: COLORS.blue, fontSize: 9, fontWeight: "900", letterSpacing: 1.4 },
   resumeTitle: { color: COLORS.ink, fontSize: 16, fontWeight: "900" },
@@ -813,7 +833,7 @@ const styles = StyleSheet.create({
   selectChipSelected: { backgroundColor: COLORS.blue, borderColor: COLORS.blue },
   selectChipText: { color: COLORS.muted, fontSize: 13, fontWeight: "800" },
   selectChipTextSelected: { color: "#FFFFFF" },
-  startPanel: { borderRadius: 18, padding: 17, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.line, flexDirection: "row", alignItems: "center", gap: 14, shadowColor: "#77746D", shadowOpacity: 0.1, shadowRadius: 15, shadowOffset: { width: 0, height: 7 }, elevation: 2 },
+  startPanel: { borderRadius: 18, padding: 17, backgroundColor: "rgba(255,255,255,0.34)", borderWidth: 1, borderColor: COLORS.line, flexDirection: "row", alignItems: "center", gap: 14, shadowColor: "#77746D", shadowOpacity: 0.1, shadowRadius: 15, shadowOffset: { width: 0, height: 7 }, elevation: 2 },
   startPanelCopy: { flex: 1, gap: 3 },
   startPanelEyebrow: { color: COLORS.blue, fontSize: 9, fontWeight: "900", letterSpacing: 1.5 },
   startPanelTitle: { color: COLORS.ink, fontSize: 17, fontWeight: "900" },
