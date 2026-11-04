@@ -25,12 +25,14 @@ import {
   loadProgress,
   levelExperience,
   levelForExperience,
+  levelNameForLevel,
   nextTitleForPoints,
   percentage,
   recordAnswer,
   rewardForAnswer,
   saveProgress,
   titleForPoints,
+  unlockedTitles,
   type ProgressState,
   type SavedQuizSession,
 } from "@/lib/progress";
@@ -133,6 +135,7 @@ function SectionTitle({ eyebrow, title }: { eyebrow: string; title: string }) {
 export default function HomeScreen() {
   const [screen, setScreen] = useState<Screen>("setup");
   const [mode, setMode] = useState<QuizMode>("choice");
+  const [weaknessMode, setWeaknessMode] = useState(false);
   const [category, setCategory] = useState<CategoryFilter>("すべて");
   const [difficulty, setDifficulty] = useState<DifficultyFilter>("すべて");
   const [questionCount, setQuestionCount] = useState<QuestionCount>("すべて");
@@ -166,16 +169,26 @@ export default function HomeScreen() {
       questions.filter(
         (question) =>
           (category === "すべて" || question.category === category) &&
-          (difficulty === "すべて" || question.difficulty === difficulty),
+          (difficulty === "すべて" || question.difficulty === difficulty) &&
+          (!weaknessMode || (progress.records[question.id]?.attempts ?? 0) > (progress.records[question.id]?.correct ?? 0)),
       ),
-    [category, difficulty],
+    [category, difficulty, progress.records, weaknessMode],
   );
 
   const currentQuestion = sessionQuestions[currentIndex];
+  const weakQuestionCount = questions.filter((question) => {
+    const record = progress.records[question.id];
+    return record ? record.attempts > record.correct : false;
+  }).length;
   const overallPercentage = percentage(progress.totalCorrect, progress.totalAttempts);
   const currentLevel = levelForExperience(progress.experience);
   const levelProgress = levelExperience(progress.experience);
-  const currentTitle = titleForPoints(progress.points);
+  const unlockedTitleOptions = unlockedTitles(progress.points);
+  const fallbackTitle = titleForPoints(progress.points);
+  const currentTitle = unlockedTitleOptions.some((title) => title.name === progress.selectedTitle)
+    ? progress.selectedTitle ?? fallbackTitle
+    : fallbackTitle;
+  const currentLevelName = levelNameForLevel(currentLevel);
   const nextTitle = nextTitleForPoints(progress.points);
 
   const buildSavedSession = (
@@ -189,6 +202,7 @@ export default function HomeScreen() {
     savedPoints: number,
   ): SavedQuizSession => ({
     mode,
+    weaknessMode,
     category,
     difficulty,
     questionCount,
@@ -259,6 +273,7 @@ export default function HomeScreen() {
       .filter((question): question is Question => Boolean(question));
     if (!restoredQuestions.length) return;
     setMode(saved.mode);
+    setWeaknessMode(saved.weaknessMode ?? false);
     setCategory(saved.category as CategoryFilter);
     setDifficulty(saved.difficulty as DifficultyFilter);
     setQuestionCount(saved.questionCount as QuestionCount);
@@ -333,6 +348,13 @@ export default function HomeScreen() {
     setScreen("setup");
     setAnswerState(null);
     setDraft("");
+  };
+
+  const chooseTitle = (title: string) => {
+    if (!unlockedTitleOptions.some((option) => option.name === title)) return;
+    const nextProgress = { ...progress, selectedTitle: title };
+    setProgress(nextProgress);
+    void saveProgress(nextProgress);
   };
 
   if (isLoading) {
@@ -523,7 +545,7 @@ export default function HomeScreen() {
               <Text style={styles.summaryScoreUnit}>%</Text>
             </View>
             <Text style={styles.summaryScoreLabel}>{sessionAnswered}問中 {sessionCorrect}問正解</Text>
-            <Text style={styles.summaryRankText}>Lv.{currentLevel}　{currentTitle}</Text>
+            <Text style={styles.summaryRankText}>Lv.{currentLevel}　{currentLevelName} ・ {currentTitle}</Text>
           </View>
           <View style={styles.statRow}>
             <StatChip label="今回の正答率" value={`${sessionPercentage}%`} accent={COLORS.blue} />
@@ -590,9 +612,19 @@ export default function HomeScreen() {
               <View style={[styles.levelFill, { width: `${levelProgress.current}%` }]} />
             </View>
             <Text style={styles.rankSubtext}>
-              {nextTitle ? `あと${nextTitle.required - progress.points}ptで「${nextTitle.title}」` : "最高ランクの称号を獲得中"}
+              Lv.{currentLevel}「{currentLevelName}」 ・ {nextTitle ? `あと${nextTitle.required - progress.points}ptで「${nextTitle.title}」` : "全称号を解放中"}
             </Text>
           </View>
+        </View>
+
+        <View style={styles.setupCard}>
+          <SectionTitle eyebrow="RANK CUSTOMIZE" title="称号をカスタマイズ" />
+          <Text style={styles.cardHint}>解放済みの称号から、ホームに表示する称号を選べます。</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipScroll}>
+            {unlockedTitleOptions.map((title) => (
+              <SelectChip key={title.name} label={title.name} selected={currentTitle === title.name} onPress={() => chooseTitle(title.name)} />
+            ))}
+          </ScrollView>
         </View>
 
         <View style={styles.statRow}>
@@ -616,6 +648,19 @@ export default function HomeScreen() {
             </Pressable>
           </View>
         )}
+
+        <View style={[styles.weaknessPanel, weaknessMode && styles.weaknessPanelSelected]}>
+          <View style={styles.weaknessCopy}>
+            <Text style={styles.weaknessEyebrow}>FOCUS MODE</Text>
+            <Text style={styles.weaknessTitle}>弱点克服モード</Text>
+            <Text style={styles.weaknessText}>
+              {weakQuestionCount > 0 ? `間違えた問題だけ ${weakQuestionCount}問` : "間違えた問題がここに集まります"}
+            </Text>
+          </View>
+          <Pressable onPress={() => setWeaknessMode((selected) => !selected)} style={[styles.weaknessToggle, weaknessMode && styles.weaknessToggleSelected]}>
+            <Text style={[styles.weaknessToggleText, weaknessMode && styles.weaknessToggleTextSelected]}>{weaknessMode ? "ON" : "OFF"}</Text>
+          </Pressable>
+        </View>
 
         <View style={styles.setupCard}>
           <SectionTitle eyebrow="01 / MODE" title="答え方を選ぶ" />
@@ -665,10 +710,10 @@ export default function HomeScreen() {
         <View style={styles.startPanel}>
           <View style={styles.startPanelCopy}>
             <Text style={styles.startPanelEyebrow}>READY TO GO</Text>
-            <Text style={styles.startPanelTitle}>{questionCount === "すべて" ? availableQuestions.length : Math.min(questionCount, availableQuestions.length)}問からスタート</Text>
-            <Text style={styles.startPanelText}>{formatFilter(category)} / {formatFilter(difficulty)} / {mode === "choice" ? "4択" : "入力"}</Text>
+            <Text style={styles.startPanelTitle}>{availableQuestions.length ? `${questionCount === "すべて" ? availableQuestions.length : Math.min(questionCount, availableQuestions.length)}問からスタート` : "対象の問題はありません"}</Text>
+            <Text style={styles.startPanelText}>{weaknessMode ? "間違えた問題を復習" : `${formatFilter(category)} / ${formatFilter(difficulty)} / ${mode === "choice" ? "4択" : "入力"}`}</Text>
           </View>
-          <Pressable onPress={startQuiz} style={styles.startButton}>
+          <Pressable disabled={!availableQuestions.length} onPress={startQuiz} style={[styles.startButton, !availableQuestions.length && styles.primaryButtonDisabled]}>
             <Text style={styles.startButtonText}>学習開始</Text>
             <Text style={styles.startButtonArrow}>→</Text>
           </Pressable>
@@ -716,6 +761,17 @@ const styles = StyleSheet.create({
   statChip: { flex: 1, paddingVertical: 12, paddingHorizontal: 10, backgroundColor: COLORS.card, borderRadius: 14, borderWidth: 1, borderColor: COLORS.line },
   statLabel: { color: COLORS.muted, fontSize: 10, fontWeight: "700", marginBottom: 3 },
   statValue: { fontSize: 18, fontWeight: "900" },
+  cardHint: { color: COLORS.muted, fontSize: 11, lineHeight: 17 },
+  weaknessPanel: { borderRadius: 20, padding: 16, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.line, flexDirection: "row", alignItems: "center", gap: 14 },
+  weaknessPanelSelected: { backgroundColor: COLORS.amberSoft, borderColor: "#F0D59B" },
+  weaknessCopy: { flex: 1, gap: 3 },
+  weaknessEyebrow: { color: COLORS.amber, fontSize: 9, fontWeight: "900", letterSpacing: 1.4 },
+  weaknessTitle: { color: COLORS.ink, fontSize: 16, fontWeight: "900" },
+  weaknessText: { color: COLORS.muted, fontSize: 11, marginTop: 3 },
+  weaknessToggle: { minWidth: 64, paddingHorizontal: 13, paddingVertical: 11, borderRadius: 13, backgroundColor: COLORS.paper, borderWidth: 1, borderColor: COLORS.line, alignItems: "center" },
+  weaknessToggleSelected: { backgroundColor: COLORS.amber, borderColor: COLORS.amber },
+  weaknessToggleText: { color: COLORS.muted, fontSize: 13, fontWeight: "900" },
+  weaknessToggleTextSelected: { color: "#FFFFFF" },
   resumePanel: { borderRadius: 20, padding: 16, backgroundColor: COLORS.blueSoft, borderWidth: 1, borderColor: "#CFD9FF", flexDirection: "row", alignItems: "center", gap: 14 },
   resumeCopy: { flex: 1, gap: 3 },
   resumeEyebrow: { color: COLORS.blue, fontSize: 9, fontWeight: "900", letterSpacing: 1.4 },
