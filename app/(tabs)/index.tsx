@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Keyboard,
@@ -141,6 +141,7 @@ export default function HomeScreen() {
   const [sessionExperience, setSessionExperience] = useState(0);
   const [sessionPoints, setSessionPoints] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const previousFirstQuestionId = useRef<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -173,12 +174,22 @@ export default function HomeScreen() {
   const nextTitle = nextTitleForPoints(progress.points);
 
   const startQuiz = () => {
-    setSessionQuestions(
-      shuffle(availableQuestions).map((question) => ({
-        ...question,
-        choices: shuffle(question.choices),
-      })),
-    );
+    const randomizedQuestions = shuffle(availableQuestions).map((question) => ({
+      ...question,
+      choices: shuffle(question.choices),
+    }));
+    if (
+      randomizedQuestions.length > 1 &&
+      randomizedQuestions[0].id === previousFirstQuestionId.current
+    ) {
+      const swapIndex = 1 + Math.floor(Math.random() * (randomizedQuestions.length - 1));
+      [randomizedQuestions[0], randomizedQuestions[swapIndex]] = [
+        randomizedQuestions[swapIndex],
+        randomizedQuestions[0],
+      ];
+    }
+    previousFirstQuestionId.current = randomizedQuestions[0]?.id ?? null;
+    setSessionQuestions(randomizedQuestions);
     setCurrentIndex(0);
     setAnswerState(null);
     setDraft("");
