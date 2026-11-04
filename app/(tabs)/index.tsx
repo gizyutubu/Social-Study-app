@@ -37,6 +37,7 @@ import {
 type QuizMode = "input" | "choice";
 type CategoryFilter = Category | "すべて";
 type DifficultyFilter = Difficulty | "すべて";
+type QuestionCount = 5 | 10 | 15 | 20 | "すべて";
 type Screen = "setup" | "quiz" | "summary";
 type AnswerState = {
   correct: boolean;
@@ -67,6 +68,8 @@ const categoryColors: Record<Category, { background: string; text: string }> = {
   地理: { background: "#E8F7F0", text: "#14866B" },
   人物史: { background: "#F3EDFF", text: "#7541B6" },
 };
+
+const questionCounts: QuestionCount[] = [5, 10, 15, 20, "すべて"];
 
 function shuffle<T>(items: T[]): T[] {
   const result = [...items];
@@ -131,6 +134,7 @@ export default function HomeScreen() {
   const [mode, setMode] = useState<QuizMode>("choice");
   const [category, setCategory] = useState<CategoryFilter>("すべて");
   const [difficulty, setDifficulty] = useState<DifficultyFilter>("すべて");
+  const [questionCount, setQuestionCount] = useState<QuestionCount>("すべて");
   const [progress, setProgress] = useState<ProgressState>(emptyProgress);
   const [sessionQuestions, setSessionQuestions] = useState<Question[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -174,7 +178,11 @@ export default function HomeScreen() {
   const nextTitle = nextTitleForPoints(progress.points);
 
   const startQuiz = () => {
-    const randomizedQuestions = shuffle(availableQuestions).map((question) => ({
+    const shuffledQuestions = shuffle(availableQuestions);
+    const selectedQuestions = questionCount === "すべて"
+      ? shuffledQuestions
+      : shuffledQuestions.slice(0, Math.min(questionCount, shuffledQuestions.length));
+    const randomizedQuestions = selectedQuestions.map((question) => ({
       ...question,
       choices: shuffle(question.choices),
     }));
@@ -531,12 +539,23 @@ export default function HomeScreen() {
               <SelectChip key={item} label={item} selected={difficulty === item} onPress={() => setDifficulty(item)} />
             ))}
           </ScrollView>
+          <Text style={[styles.fieldLabel, styles.fieldLabelSpaced]}>問題数</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipScroll}>
+            {questionCounts.map((count) => (
+              <SelectChip
+                key={String(count)}
+                label={count === "すべて" ? "すべて" : `${count}問`}
+                selected={questionCount === count}
+                onPress={() => setQuestionCount(count)}
+              />
+            ))}
+          </ScrollView>
         </View>
 
         <View style={styles.startPanel}>
           <View style={styles.startPanelCopy}>
             <Text style={styles.startPanelEyebrow}>READY TO GO</Text>
-            <Text style={styles.startPanelTitle}>{availableQuestions.length}問からスタート</Text>
+            <Text style={styles.startPanelTitle}>{questionCount === "すべて" ? availableQuestions.length : Math.min(questionCount, availableQuestions.length)}問からスタート</Text>
             <Text style={styles.startPanelText}>{formatFilter(category)} / {formatFilter(difficulty)} / {mode === "choice" ? "4択" : "入力"}</Text>
           </View>
           <Pressable onPress={startQuiz} style={styles.startButton}>
@@ -545,7 +564,7 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
-        <Text style={styles.sourceText}>出典：添付教材「中学社会総合対策まとめ」より代表問題を収録</Text>
+        <Text style={styles.sourceText}>出典：添付教材「中学社会総合対策まとめ」の記述・用語・人物史500問を収録</Text>
       </ScrollView>
     </ScreenContainer>
   );
