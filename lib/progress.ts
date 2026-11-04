@@ -14,6 +14,8 @@ export type ProgressState = {
   totalCorrect: number;
   streak: number;
   bestStreak: number;
+  experience: number;
+  points: number;
 };
 
 export const emptyProgress: ProgressState = {
@@ -22,6 +24,8 @@ export const emptyProgress: ProgressState = {
   totalCorrect: 0,
   streak: 0,
   bestStreak: 0,
+  experience: 0,
+  points: 0,
 };
 
 export async function loadProgress(): Promise<ProgressState> {
@@ -35,6 +39,8 @@ export async function loadProgress(): Promise<ProgressState> {
       totalCorrect: parsed.totalCorrect ?? 0,
       streak: parsed.streak ?? 0,
       bestStreak: parsed.bestStreak ?? 0,
+      experience: parsed.experience ?? 0,
+      points: parsed.points ?? 0,
     };
   } catch {
     return emptyProgress;
@@ -60,6 +66,7 @@ export function recordAnswer(
     lastAnsweredAt: "",
   };
   const streak = correct ? progress.streak + 1 : 0;
+  const reward = rewardForAnswer(correct, streak);
   const updated: ProgressState = {
     records: {
       ...progress.records,
@@ -73,8 +80,43 @@ export function recordAnswer(
     totalCorrect: progress.totalCorrect + (correct ? 1 : 0),
     streak,
     bestStreak: Math.max(progress.bestStreak, streak),
+    experience: progress.experience + reward.experience,
+    points: progress.points + reward.points,
   };
   return updated;
+}
+
+export function rewardForAnswer(correct: boolean, streak: number): { experience: number; points: number } {
+  if (!correct) return { experience: 0, points: 0 };
+  return {
+    experience: 10 + Math.min(Math.max(streak - 1, 0), 5) * 2,
+    points: 1 + Math.floor(Math.max(streak - 1, 0) / 3),
+  };
+}
+
+export function levelForExperience(experience: number): number {
+  return Math.floor(experience / 100) + 1;
+}
+
+export function levelExperience(experience: number): { current: number; next: number; remaining: number } {
+  const currentLevelExperience = experience % 100;
+  return { current: currentLevelExperience, next: 100, remaining: 100 - currentLevelExperience };
+}
+
+export function titleForPoints(points: number): string {
+  if (points >= 1000) return "社会科の達人";
+  if (points >= 600) return "時代の探究者";
+  if (points >= 300) return "社会マスター";
+  if (points >= 100) return "用語ハンター";
+  return "社会科ビギナー";
+}
+
+export function nextTitleForPoints(points: number): { title: string; required: number } | null {
+  if (points >= 1000) return null;
+  if (points >= 600) return { title: "社会科の達人", required: 1000 };
+  if (points >= 300) return { title: "時代の探究者", required: 600 };
+  if (points >= 100) return { title: "社会マスター", required: 300 };
+  return { title: "用語ハンター", required: 100 };
 }
 
 export function percentage(correct: number, total: number): number {

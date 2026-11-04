@@ -23,9 +23,14 @@ import {
 import {
   emptyProgress,
   loadProgress,
+  levelExperience,
+  levelForExperience,
+  nextTitleForPoints,
   percentage,
   recordAnswer,
+  rewardForAnswer,
   saveProgress,
+  titleForPoints,
   type ProgressState,
 } from "@/lib/progress";
 
@@ -36,6 +41,8 @@ type Screen = "setup" | "quiz" | "summary";
 type AnswerState = {
   correct: boolean;
   submitted: string;
+  experienceGained: number;
+  pointsGained: number;
 };
 
 const COLORS = {
@@ -131,6 +138,8 @@ export default function HomeScreen() {
   const [draft, setDraft] = useState("");
   const [sessionCorrect, setSessionCorrect] = useState(0);
   const [sessionAnswered, setSessionAnswered] = useState(0);
+  const [sessionExperience, setSessionExperience] = useState(0);
+  const [sessionPoints, setSessionPoints] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -158,14 +167,25 @@ export default function HomeScreen() {
 
   const currentQuestion = sessionQuestions[currentIndex];
   const overallPercentage = percentage(progress.totalCorrect, progress.totalAttempts);
+  const currentLevel = levelForExperience(progress.experience);
+  const levelProgress = levelExperience(progress.experience);
+  const currentTitle = titleForPoints(progress.points);
+  const nextTitle = nextTitleForPoints(progress.points);
 
   const startQuiz = () => {
-    setSessionQuestions(shuffle(availableQuestions));
+    setSessionQuestions(
+      shuffle(availableQuestions).map((question) => ({
+        ...question,
+        choices: shuffle(question.choices),
+      })),
+    );
     setCurrentIndex(0);
     setAnswerState(null);
     setDraft("");
     setSessionCorrect(0);
     setSessionAnswered(0);
+    setSessionExperience(0);
+    setSessionPoints(0);
     setScreen("quiz");
   };
 
@@ -174,12 +194,16 @@ export default function HomeScreen() {
     Keyboard.dismiss();
     const accepted = currentQuestion.acceptedAnswers ?? [currentQuestion.answer];
     const correct = accepted.some((answer) => normalizeAnswer(answer) === normalizeAnswer(value));
+    const nextStreak = correct ? progress.streak + 1 : 0;
+    const reward = rewardForAnswer(correct, nextStreak);
     const nextProgress = recordAnswer(progress, currentQuestion.id, correct);
     setProgress(nextProgress);
     void saveProgress(nextProgress);
-    setAnswerState({ correct, submitted: value });
+    setAnswerState({ correct, submitted: value, experienceGained: reward.experience, pointsGained: reward.points });
     setSessionAnswered((count) => count + 1);
     if (correct) setSessionCorrect((count) => count + 1);
+    setSessionExperience((total) => total + reward.experience);
+    setSessionPoints((total) => total + reward.points);
   };
 
   const moveNext = () => {
@@ -333,6 +357,13 @@ export default function HomeScreen() {
                   <Text style={styles.answerRevealText}>{currentQuestion.answer}</Text>
                 </View>
                 <Text style={styles.explanationText}>{currentQuestion.explanation}</Text>
+                {answerState.correct && (
+                  <View style={styles.rewardRow}>
+                    <Text style={styles.rewardText}>+{answerState.experienceGained} XP</Text>
+                    <Text style={styles.rewardText}>+{answerState.pointsGained} ポイント</Text>
+                    <Text style={styles.rewardStreakText}>連続 {progress.streak}</Text>
+                  </View>
+                )}
               </View>
             )}
             </ScrollView>
@@ -379,6 +410,7 @@ export default function HomeScreen() {
               <Text style={styles.summaryScoreUnit}>%</Text>
             </View>
             <Text style={styles.summaryScoreLabel}>{sessionAnswered}問中 {sessionCorrect}問正解</Text>
+            <Text style={styles.summaryRankText}>Lv.{currentLevel}　{currentTitle}</Text>
           </View>
           <View style={styles.statRow}>
             <StatChip label="今回の正答率" value={`${sessionPercentage}%`} accent={COLORS.blue} />
@@ -388,6 +420,16 @@ export default function HomeScreen() {
           <View style={styles.summaryNote}>
             <Text style={styles.summaryNoteTitle}>次のおすすめ</Text>
             <Text style={styles.summaryNoteText}>間違えた問題は、同じカテゴリをもう一度解くと記憶に残りやすくなります。</Text>
+          </View>
+          <View style={styles.rewardSummary}>
+            <View>
+              <Text style={styles.rewardSummaryLabel}>今回の獲得</Text>
+              <Text style={styles.rewardSummaryTitle}>連続正解でポイントアップ</Text>
+            </View>
+            <View style={styles.rewardSummaryValues}>
+              <Text style={styles.rewardSummaryXp}>+{sessionExperience} XP</Text>
+              <Text style={styles.rewardSummaryPoints}>+{sessionPoints} pt</Text>
+            </View>
           </View>
           <Pressable onPress={startQuiz} style={styles.primaryButton}>
             <Text style={styles.primaryButtonText}>同じ条件でもう一度</Text>
@@ -419,6 +461,25 @@ export default function HomeScreen() {
           <Text style={styles.eyebrow}>STUDY DASHBOARD</Text>
           <Text style={styles.heroTitle}>今日はどこから攻める？</Text>
           <Text style={styles.heroSubtitle}>教材から厳選した一問で、知識をすばやく定着。</Text>
+        </View>
+
+        <View style={styles.rankPanel}>
+          <View style={styles.levelBadge}>
+            <Text style={styles.levelBadgeLabel}>LV</Text>
+            <Text style={styles.levelBadgeValue}>{currentLevel}</Text>
+          </View>
+          <View style={styles.rankCopy}>
+            <View style={styles.rankTitleRow}>
+              <Text style={styles.rankTitle}>{currentTitle}</Text>
+              <Text style={styles.pointsLabel}>{progress.points} pt</Text>
+            </View>
+            <View style={styles.levelTrack}>
+              <View style={[styles.levelFill, { width: `${levelProgress.current}%` }]} />
+            </View>
+            <Text style={styles.rankSubtext}>
+              {nextTitle ? `あと${nextTitle.required - progress.points}ptで「${nextTitle.title}」` : "最高ランクの称号を獲得中"}
+            </Text>
+          </View>
         </View>
 
         <View style={styles.statRow}>
@@ -500,6 +561,17 @@ const styles = StyleSheet.create({
   eyebrow: { color: COLORS.blue, fontSize: 10, fontWeight: "900", letterSpacing: 1.7 },
   heroTitle: { color: COLORS.ink, fontSize: 30, fontWeight: "900", letterSpacing: -0.7 },
   heroSubtitle: { color: COLORS.muted, fontSize: 14, lineHeight: 21 },
+  rankPanel: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: COLORS.ink, borderRadius: 19, padding: 13 },
+  levelBadge: { width: 52, height: 52, borderRadius: 17, backgroundColor: COLORS.blue, alignItems: "center", justifyContent: "center" },
+  levelBadgeLabel: { color: "#C9D4FF", fontSize: 9, fontWeight: "900", letterSpacing: 1 },
+  levelBadgeValue: { color: "#FFFFFF", fontSize: 23, fontWeight: "900", lineHeight: 25 },
+  rankCopy: { flex: 1, gap: 5 },
+  rankTitleRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  rankTitle: { color: "#FFFFFF", fontSize: 15, fontWeight: "900" },
+  pointsLabel: { color: "#A8B9FF", fontSize: 12, fontWeight: "900" },
+  levelTrack: { height: 6, borderRadius: 6, backgroundColor: "#3A4767", overflow: "hidden" },
+  levelFill: { height: "100%", borderRadius: 6, backgroundColor: "#8EA2FF" },
+  rankSubtext: { color: "#CBD3E9", fontSize: 10 },
   statRow: { flexDirection: "row", gap: 8 },
   statChip: { flex: 1, paddingVertical: 12, paddingHorizontal: 10, backgroundColor: COLORS.card, borderRadius: 14, borderWidth: 1, borderColor: COLORS.line },
   statLabel: { color: COLORS.muted, fontSize: 10, fontWeight: "700", marginBottom: 3 },
@@ -582,6 +654,9 @@ const styles = StyleSheet.create({
   answerRevealLabel: { color: COLORS.muted, fontSize: 10, fontWeight: "800" },
   answerRevealText: { color: COLORS.ink, fontSize: 19, fontWeight: "900" },
   explanationText: { color: COLORS.ink, fontSize: 13, lineHeight: 20 },
+  rewardRow: { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" },
+  rewardText: { color: COLORS.blue, backgroundColor: COLORS.blueSoft, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 5, fontSize: 11, fontWeight: "900" },
+  rewardStreakText: { color: COLORS.amber, backgroundColor: COLORS.amberSoft, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 5, fontSize: 11, fontWeight: "900" },
   quizActionBar: { minHeight: 74, paddingHorizontal: 20, paddingVertical: 10, backgroundColor: COLORS.card, borderTopWidth: 1, borderTopColor: COLORS.line, flexDirection: "row", alignItems: "center", gap: 12, shadowColor: COLORS.ink, shadowOpacity: 0.08, shadowRadius: 10, shadowOffset: { width: 0, height: -4 }, elevation: 5 },
   quizActionHint: { flex: 1, gap: 2 },
   quizActionHintTitle: { color: COLORS.ink, fontSize: 12, fontWeight: "900" },
@@ -596,9 +671,16 @@ const styles = StyleSheet.create({
   summaryScore: { color: "#FFFFFF", fontSize: 37, fontWeight: "900", letterSpacing: -1 },
   summaryScoreUnit: { color: "#C9D4FF", fontSize: 15, fontWeight: "900", marginTop: 17 },
   summaryScoreLabel: { color: COLORS.blue, fontSize: 13, fontWeight: "900" },
+  summaryRankText: { color: COLORS.ink, fontSize: 13, fontWeight: "900", marginTop: 4 },
   summaryNote: { backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.line, borderRadius: 17, padding: 16, gap: 6 },
   summaryNoteTitle: { color: COLORS.ink, fontSize: 14, fontWeight: "900" },
   summaryNoteText: { color: COLORS.muted, fontSize: 12, lineHeight: 18 },
+  rewardSummary: { backgroundColor: COLORS.amberSoft, borderWidth: 1, borderColor: "#F3D58D", borderRadius: 17, padding: 15, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10 },
+  rewardSummaryLabel: { color: COLORS.amber, fontSize: 10, fontWeight: "900", letterSpacing: 0.7 },
+  rewardSummaryTitle: { color: COLORS.ink, fontSize: 13, fontWeight: "900", marginTop: 4 },
+  rewardSummaryValues: { alignItems: "flex-end", gap: 2 },
+  rewardSummaryXp: { color: COLORS.blue, fontSize: 16, fontWeight: "900" },
+  rewardSummaryPoints: { color: COLORS.amber, fontSize: 13, fontWeight: "900" },
   secondaryButton: { minHeight: 52, borderRadius: 16, borderWidth: 1.5, borderColor: COLORS.line, alignItems: "center", justifyContent: "center" },
   secondaryButtonText: { color: COLORS.ink, fontSize: 14, fontWeight: "900" },
 });
