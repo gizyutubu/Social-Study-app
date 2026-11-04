@@ -52,9 +52,9 @@ type AnswerState = {
 const COLORS = {
   ink: "#20201E",
   muted: "#706D67",
-  paper: "#F3F1EC",
-  card: "#FFFFFF",
-  line: "#D9D5CE",
+  paper: "#E9E7E2",
+  card: "rgba(255,255,255,0.72)",
+  line: "rgba(255,255,255,0.88)",
   blue: "#B34C3E",
   blueSoft: "#F5E5E0",
   green: "#2F765D",
@@ -169,17 +169,21 @@ export default function HomeScreen() {
       questions.filter(
         (question) =>
           (category === "すべて" || question.category === category) &&
-          (difficulty === "すべて" || question.difficulty === difficulty) &&
-          (!weaknessMode || (progress.records[question.id]?.attempts ?? 0) > (progress.records[question.id]?.correct ?? 0)),
+          (difficulty === "すべて" || question.difficulty === difficulty),
       ),
-    [category, difficulty, progress.records, weaknessMode],
+    [category, difficulty],
+  );
+
+  const weakQuestions = useMemo(
+    () => questions.filter((question) => {
+      const record = progress.records[question.id];
+      return record ? record.attempts > record.correct : false;
+    }),
+    [progress.records],
   );
 
   const currentQuestion = sessionQuestions[currentIndex];
-  const weakQuestionCount = questions.filter((question) => {
-    const record = progress.records[question.id];
-    return record ? record.attempts > record.correct : false;
-  }).length;
+  const weakQuestionCount = weakQuestions.length;
   const overallPercentage = percentage(progress.totalCorrect, progress.totalAttempts);
   const currentLevel = levelForExperience(progress.experience);
   const levelProgress = levelExperience(progress.experience);
@@ -200,9 +204,10 @@ export default function HomeScreen() {
     savedAnswered: number,
     savedExperience: number,
     savedPoints: number,
+    savedWeaknessMode = weaknessMode,
   ): SavedQuizSession => ({
     mode,
-    weaknessMode,
+    weaknessMode: savedWeaknessMode,
     category,
     difficulty,
     questionCount,
@@ -221,11 +226,11 @@ export default function HomeScreen() {
     savedAt: new Date().toISOString(),
   });
 
-  const startQuiz = () => {
-    const shuffledQuestions = shuffle(availableQuestions);
-    const selectedQuestions = questionCount === "すべて"
+  const launchQuiz = (sourceQuestions: Question[], savedWeaknessMode: boolean, count: QuestionCount = questionCount) => {
+    const shuffledQuestions = shuffle(sourceQuestions);
+    const selectedQuestions = count === "すべて"
       ? shuffledQuestions
-      : shuffledQuestions.slice(0, Math.min(questionCount, shuffledQuestions.length));
+      : shuffledQuestions.slice(0, Math.min(count, shuffledQuestions.length));
     const randomizedQuestions = selectedQuestions.map((question) => ({
       ...question,
       choices: shuffle(question.choices),
@@ -241,6 +246,8 @@ export default function HomeScreen() {
       ];
     }
     previousFirstQuestionId.current = randomizedQuestions[0]?.id ?? null;
+    setWeaknessMode(savedWeaknessMode);
+    setQuestionCount(count);
     setSessionQuestions(randomizedQuestions);
     setCurrentIndex(0);
     setAnswerState(null);
@@ -251,12 +258,16 @@ export default function HomeScreen() {
     setSessionPoints(0);
     const nextProgress = {
       ...progress,
-      activeSession: buildSavedSession(randomizedQuestions, 0, null, "", 0, 0, 0, 0),
+      activeSession: buildSavedSession(randomizedQuestions, 0, null, "", 0, 0, 0, 0, savedWeaknessMode),
     };
     setProgress(nextProgress);
     void saveProgress(nextProgress);
     setScreen("quiz");
   };
+
+  const startQuiz = () => launchQuiz(availableQuestions, false);
+
+  const startWeaknessQuiz = () => launchQuiz(weakQuestions, true, "すべて");
 
   const resumeQuiz = () => {
     const saved = progress.activeSession;
@@ -649,16 +660,16 @@ export default function HomeScreen() {
           </View>
         )}
 
-        <View style={[styles.weaknessPanel, weaknessMode && styles.weaknessPanelSelected]}>
+        <View style={styles.weaknessPanel}>
           <View style={styles.weaknessCopy}>
-              <Text style={styles.weaknessEyebrow}>REVIEW LIST</Text>
+            <Text style={styles.weaknessEyebrow}>REVIEW LIST</Text>
             <Text style={styles.weaknessTitle}>弱点克服モード</Text>
             <Text style={styles.weaknessText}>
               {weakQuestionCount > 0 ? `間違えた問題だけ ${weakQuestionCount}問` : "間違えた問題がここに集まります"}
             </Text>
           </View>
-          <Pressable onPress={() => setWeaknessMode((selected) => !selected)} style={[styles.weaknessToggle, weaknessMode && styles.weaknessToggleSelected]}>
-            <Text style={[styles.weaknessToggleText, weaknessMode && styles.weaknessToggleTextSelected]}>{weaknessMode ? "ON" : "OFF"}</Text>
+          <Pressable disabled={!weakQuestionCount} onPress={startWeaknessQuiz} style={[styles.weaknessToggle, !weakQuestionCount && styles.weaknessToggleDisabled]}>
+            <Text style={[styles.weaknessToggleText, !weakQuestionCount && styles.weaknessToggleTextDisabled]}>{weakQuestionCount ? "まとめて解く" : "まだなし"}</Text>
           </Pressable>
         </View>
 
@@ -711,7 +722,7 @@ export default function HomeScreen() {
           <View style={styles.startPanelCopy}>
             <Text style={styles.startPanelEyebrow}>SET A SESSION</Text>
             <Text style={styles.startPanelTitle}>{availableQuestions.length ? `${questionCount === "すべて" ? availableQuestions.length : Math.min(questionCount, availableQuestions.length)}問からスタート` : "対象の問題はありません"}</Text>
-            <Text style={styles.startPanelText}>{weaknessMode ? "間違えた問題を復習" : `${formatFilter(category)} / ${formatFilter(difficulty)} / ${mode === "choice" ? "4択" : "入力"}`}</Text>
+            <Text style={styles.startPanelText}>{formatFilter(category)} / {formatFilter(difficulty)} / {mode === "choice" ? "4択" : "入力"}</Text>
           </View>
           <Pressable disabled={!availableQuestions.length} onPress={startQuiz} style={[styles.startButton, !availableQuestions.length && styles.primaryButtonDisabled]}>
             <Text style={styles.startButtonText}>学習開始</Text>
@@ -746,23 +757,23 @@ const styles = StyleSheet.create({
   eyebrow: { color: COLORS.blue, fontSize: 10, fontWeight: "900", letterSpacing: 1.7 },
   heroTitle: { color: COLORS.ink, fontSize: 30, fontWeight: "900", letterSpacing: -0.7 },
   heroSubtitle: { color: COLORS.muted, fontSize: 14, lineHeight: 21 },
-  rankPanel: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: COLORS.card, borderRadius: 10, borderWidth: 1, borderColor: COLORS.line, padding: 13 },
+  rankPanel: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: COLORS.card, borderRadius: 18, borderWidth: 1, borderColor: COLORS.line, padding: 13, shadowColor: "#77746D", shadowOpacity: 0.12, shadowRadius: 16, shadowOffset: { width: 0, height: 7 }, elevation: 2 },
   levelBadge: { width: 52, height: 52, borderRadius: 8, backgroundColor: COLORS.blue, alignItems: "center", justifyContent: "center" },
   levelBadgeLabel: { color: "#FBEDE8", fontSize: 9, fontWeight: "900", letterSpacing: 1 },
   levelBadgeValue: { color: "#FFFFFF", fontSize: 23, fontWeight: "900", lineHeight: 25 },
   rankCopy: { flex: 1, gap: 5 },
   rankTitleRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  rankTitle: { color: "#FFFFFF", fontSize: 15, fontWeight: "900" },
+  rankTitle: { color: COLORS.ink, fontSize: 15, fontWeight: "900" },
   pointsLabel: { color: COLORS.blue, fontSize: 12, fontWeight: "900" },
   levelTrack: { height: 5, borderRadius: 5, backgroundColor: COLORS.line, overflow: "hidden" },
   levelFill: { height: "100%", borderRadius: 5, backgroundColor: COLORS.blue },
   rankSubtext: { color: COLORS.muted, fontSize: 10 },
   statRow: { flexDirection: "row", gap: 8 },
-  statChip: { flex: 1, paddingVertical: 12, paddingHorizontal: 10, backgroundColor: COLORS.card, borderRadius: 8, borderWidth: 1, borderColor: COLORS.line },
+  statChip: { flex: 1, paddingVertical: 12, paddingHorizontal: 10, backgroundColor: COLORS.card, borderRadius: 14, borderWidth: 1, borderColor: COLORS.line, shadowColor: "#77746D", shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 5 }, elevation: 1 },
   statLabel: { color: COLORS.muted, fontSize: 10, fontWeight: "700", marginBottom: 3 },
   statValue: { fontSize: 18, fontWeight: "900" },
   cardHint: { color: COLORS.muted, fontSize: 11, lineHeight: 17 },
-  weaknessPanel: { borderRadius: 10, padding: 16, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.line, flexDirection: "row", alignItems: "center", gap: 14 },
+  weaknessPanel: { borderRadius: 18, padding: 16, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.line, flexDirection: "row", alignItems: "center", gap: 14, shadowColor: "#77746D", shadowOpacity: 0.1, shadowRadius: 15, shadowOffset: { width: 0, height: 7 }, elevation: 2 },
   weaknessPanelSelected: { backgroundColor: COLORS.amberSoft, borderColor: "#F0D59B" },
   weaknessCopy: { flex: 1, gap: 3 },
   weaknessEyebrow: { color: COLORS.amber, fontSize: 9, fontWeight: "900", letterSpacing: 1.4 },
@@ -770,9 +781,11 @@ const styles = StyleSheet.create({
   weaknessText: { color: COLORS.muted, fontSize: 11, marginTop: 3 },
   weaknessToggle: { minWidth: 64, paddingHorizontal: 13, paddingVertical: 11, borderRadius: 7, backgroundColor: COLORS.paper, borderWidth: 1, borderColor: COLORS.line, alignItems: "center" },
   weaknessToggleSelected: { backgroundColor: COLORS.amber, borderColor: COLORS.amber },
+  weaknessToggleDisabled: { opacity: 0.5 },
   weaknessToggleText: { color: COLORS.muted, fontSize: 13, fontWeight: "900" },
   weaknessToggleTextSelected: { color: "#FFFFFF" },
-  resumePanel: { borderRadius: 10, padding: 16, backgroundColor: COLORS.blueSoft, borderWidth: 1, borderColor: "#E4C9C1", flexDirection: "row", alignItems: "center", gap: 14 },
+  weaknessToggleTextDisabled: { color: COLORS.muted },
+  resumePanel: { borderRadius: 18, padding: 16, backgroundColor: "rgba(255,255,255,0.66)", borderWidth: 1, borderColor: "rgba(255,255,255,0.92)", flexDirection: "row", alignItems: "center", gap: 14, shadowColor: "#77746D", shadowOpacity: 0.1, shadowRadius: 15, shadowOffset: { width: 0, height: 7 }, elevation: 2 },
   resumeCopy: { flex: 1, gap: 3 },
   resumeEyebrow: { color: COLORS.blue, fontSize: 9, fontWeight: "900", letterSpacing: 1.4 },
   resumeTitle: { color: COLORS.ink, fontSize: 16, fontWeight: "900" },
@@ -780,11 +793,11 @@ const styles = StyleSheet.create({
   resumeButton: { backgroundColor: COLORS.ink, paddingHorizontal: 14, paddingVertical: 12, borderRadius: 7, flexDirection: "row", alignItems: "center", gap: 8 },
   resumeButtonText: { color: "#FFFFFF", fontSize: 13, fontWeight: "900" },
   resumeButtonArrow: { color: "#FFFFFF", fontSize: 17, fontWeight: "800" },
-  setupCard: { backgroundColor: COLORS.card, borderRadius: 10, borderWidth: 1, borderColor: COLORS.line, padding: 16, gap: 14 },
+  setupCard: { backgroundColor: COLORS.card, borderRadius: 18, borderWidth: 1, borderColor: COLORS.line, padding: 16, gap: 14, shadowColor: "#77746D", shadowOpacity: 0.1, shadowRadius: 15, shadowOffset: { width: 0, height: 7 }, elevation: 2 },
   sectionTitleWrap: { gap: 3 },
   sectionTitle: { color: COLORS.ink, fontSize: 18, fontWeight: "900" },
   modeRow: { flexDirection: "row", gap: 10 },
-  modeCard: { flex: 1, minHeight: 122, borderWidth: 1.5, borderColor: COLORS.line, borderRadius: 9, padding: 13, backgroundColor: COLORS.paper, position: "relative" },
+  modeCard: { flex: 1, minHeight: 122, borderWidth: 1.5, borderColor: COLORS.line, borderRadius: 14, padding: 13, backgroundColor: "rgba(255,255,255,0.46)", position: "relative" },
   modeCardSelected: { borderColor: COLORS.blue, backgroundColor: COLORS.blueSoft },
   modeIcon: { width: 30, height: 30, borderRadius: 7, backgroundColor: "#E7E3DC", alignItems: "center", justifyContent: "center", marginBottom: 10 },
   modeIconSelected: { backgroundColor: COLORS.blue },
@@ -796,11 +809,11 @@ const styles = StyleSheet.create({
   fieldLabel: { color: COLORS.muted, fontSize: 12, fontWeight: "800" },
   fieldLabelSpaced: { marginTop: 2 },
   chipScroll: { gap: 8 },
-  selectChip: { borderWidth: 1, borderColor: COLORS.line, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 7, backgroundColor: COLORS.paper },
+  selectChip: { borderWidth: 1, borderColor: COLORS.line, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10, backgroundColor: "rgba(255,255,255,0.48)" },
   selectChipSelected: { backgroundColor: COLORS.blue, borderColor: COLORS.blue },
   selectChipText: { color: COLORS.muted, fontSize: 13, fontWeight: "800" },
   selectChipTextSelected: { color: "#FFFFFF" },
-  startPanel: { borderRadius: 10, padding: 17, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.line, flexDirection: "row", alignItems: "center", gap: 14 },
+  startPanel: { borderRadius: 18, padding: 17, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.line, flexDirection: "row", alignItems: "center", gap: 14, shadowColor: "#77746D", shadowOpacity: 0.1, shadowRadius: 15, shadowOffset: { width: 0, height: 7 }, elevation: 2 },
   startPanelCopy: { flex: 1, gap: 3 },
   startPanelEyebrow: { color: COLORS.blue, fontSize: 9, fontWeight: "900", letterSpacing: 1.5 },
   startPanelTitle: { color: COLORS.ink, fontSize: 17, fontWeight: "900" },
@@ -821,12 +834,12 @@ const styles = StyleSheet.create({
   categoryBadge: { borderRadius: 6, paddingHorizontal: 10, paddingVertical: 6 },
   categoryBadgeText: { fontSize: 11, fontWeight: "900" },
   difficultyText: { color: COLORS.muted, fontSize: 12, fontWeight: "700" },
-  questionCard: { backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.line, borderRadius: 10, padding: 21, paddingTop: 26, marginTop: 2 },
+  questionCard: { backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.line, borderRadius: 18, padding: 21, paddingTop: 26, marginTop: 2, shadowColor: "#77746D", shadowOpacity: 0.1, shadowRadius: 15, shadowOffset: { width: 0, height: 7 }, elevation: 2 },
   noteLabel: { alignSelf: "flex-start", backgroundColor: COLORS.blueSoft, borderRadius: 4, paddingHorizontal: 9, paddingVertical: 5, marginBottom: 16 },
   noteLabelText: { color: COLORS.blue, fontSize: 10, fontWeight: "900", letterSpacing: 0.4 },
   questionText: { color: COLORS.ink, fontSize: 23, fontWeight: "900", lineHeight: 34, letterSpacing: -0.3 },
   answerList: { gap: 10 },
-  option: { backgroundColor: COLORS.card, borderWidth: 1.5, borderColor: COLORS.line, borderRadius: 9, minHeight: 58, padding: 10, flexDirection: "row", alignItems: "center", gap: 12 },
+  option: { backgroundColor: "rgba(255,255,255,0.74)", borderWidth: 1.5, borderColor: COLORS.line, borderRadius: 14, minHeight: 58, padding: 10, flexDirection: "row", alignItems: "center", gap: 12 },
   optionCorrect: { backgroundColor: COLORS.greenSoft, borderWidth: 1.5, borderColor: "#8DBBA5", borderRadius: 9, minHeight: 58, padding: 10, flexDirection: "row", alignItems: "center", gap: 12 },
   optionWrong: { backgroundColor: COLORS.redSoft, borderWidth: 1.5, borderColor: "#D89B8D", borderRadius: 9, minHeight: 58, padding: 10, flexDirection: "row", alignItems: "center", gap: 12 },
   optionDisabled: { backgroundColor: "#ECEAE6", borderWidth: 1.5, borderColor: "#E1DED8", borderRadius: 9, minHeight: 58, padding: 10, flexDirection: "row", alignItems: "center", gap: 12, opacity: 0.55 },
@@ -868,7 +881,7 @@ const styles = StyleSheet.create({
   nextButtonFixed: { backgroundColor: COLORS.ink, borderRadius: 7, minHeight: 50, paddingHorizontal: 15, flexDirection: "row", alignItems: "center", justifyContent: "space-between", minWidth: 142 },
   nextButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "900" },
   nextButtonArrow: { color: "#A8B9FF", fontSize: 22, fontWeight: "800" },
-  summaryHero: { backgroundColor: COLORS.blueSoft, borderRadius: 10, borderWidth: 1, borderColor: "#E4C9C1", padding: 22, alignItems: "center", gap: 8, marginTop: 8 },
+  summaryHero: { backgroundColor: "rgba(255,255,255,0.62)", borderRadius: 18, borderWidth: 1, borderColor: COLORS.line, padding: 22, alignItems: "center", gap: 8, marginTop: 8, shadowColor: "#77746D", shadowOpacity: 0.1, shadowRadius: 15, shadowOffset: { width: 0, height: 7 }, elevation: 2 },
   summaryTitle: { color: COLORS.ink, fontSize: 30, fontWeight: "900" },
   summarySubtitle: { color: COLORS.muted, fontSize: 13, lineHeight: 19, textAlign: "center" },
   summaryScoreCircle: { width: 104, height: 104, borderRadius: 10, backgroundColor: COLORS.blue, alignItems: "center", justifyContent: "center", flexDirection: "row", marginTop: 8 },
