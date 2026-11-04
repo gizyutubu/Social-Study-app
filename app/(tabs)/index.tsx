@@ -50,19 +50,19 @@ type AnswerState = {
 };
 
 const COLORS = {
-  ink: "#17233C",
-  muted: "#65718A",
-  paper: "#F8F9FC",
+  ink: "#20201E",
+  muted: "#706D67",
+  paper: "#F3F1EC",
   card: "#FFFFFF",
-  line: "#E3E8F2",
-  blue: "#2F5BFF",
-  blueSoft: "#EAF0FF",
-  green: "#14866B",
-  greenSoft: "#E7F7F0",
-  red: "#C84657",
-  redSoft: "#FFF0F2",
-  amber: "#C47B0B",
-  amberSoft: "#FFF6DF",
+  line: "#D9D5CE",
+  blue: "#B34C3E",
+  blueSoft: "#F5E5E0",
+  green: "#2F765D",
+  greenSoft: "#E6F0EA",
+  red: "#B34C3E",
+  redSoft: "#F8E8E3",
+  amber: "#A16C2E",
+  amberSoft: "#F4EADB",
 };
 
 const categoryColors: Record<Category, { background: string; text: string }> = {
@@ -537,7 +537,7 @@ export default function HomeScreen() {
             </View>
           </View>
           <View style={styles.summaryHero}>
-            <Text style={styles.eyebrow}>SESSION COMPLETE</Text>
+            <Text style={styles.eyebrow}>TODAY&apos;S NOTES</Text>
             <Text style={styles.summaryTitle}>おつかれさま！</Text>
             <Text style={styles.summarySubtitle}>今日の学習を記録しました。少しずつ続けるほど、得点力になります。</Text>
             <View style={styles.summaryScoreCircle}>
@@ -593,7 +593,7 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.heroBlock}>
-          <Text style={styles.eyebrow}>STUDY DASHBOARD</Text>
+          <Text style={styles.eyebrow}>STUDY NOTES</Text>
           <Text style={styles.heroTitle}>今日はどこから攻める？</Text>
           <Text style={styles.heroSubtitle}>教材から厳選した一問で、知識をすばやく定着。</Text>
         </View>
@@ -618,7 +618,7 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.setupCard}>
-          <SectionTitle eyebrow="RANK CUSTOMIZE" title="称号をカスタマイズ" />
+          <SectionTitle eyebrow="PROFILE" title="称号をカスタマイズ" />
           <Text style={styles.cardHint}>解放済みの称号から、ホームに表示する称号を選べます。</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipScroll}>
             {unlockedTitleOptions.map((title) => (
@@ -636,7 +636,7 @@ export default function HomeScreen() {
         {progress.activeSession && (
           <View style={styles.resumePanel}>
             <View style={styles.resumeCopy}>
-              <Text style={styles.resumeEyebrow}>CONTINUE STUDY</Text>
+              <Text style={styles.resumeEyebrow}>KEEP YOUR PLACE</Text>
               <Text style={styles.resumeTitle}>中断した学習を再開</Text>
               <Text style={styles.resumeText}>
                 {progress.activeSession.currentIndex + 1} / {progress.activeSession.questionIds.length}問 ・ {progress.activeSession.mode === "choice" ? "4択" : "入力"}
@@ -651,7 +651,7 @@ export default function HomeScreen() {
 
         <View style={[styles.weaknessPanel, weaknessMode && styles.weaknessPanelSelected]}>
           <View style={styles.weaknessCopy}>
-            <Text style={styles.weaknessEyebrow}>FOCUS MODE</Text>
+              <Text style={styles.weaknessEyebrow}>REVIEW LIST</Text>
             <Text style={styles.weaknessTitle}>弱点克服モード</Text>
             <Text style={styles.weaknessText}>
               {weakQuestionCount > 0 ? `間違えた問題だけ ${weakQuestionCount}問` : "間違えた問題がここに集まります"}
@@ -709,7 +709,7 @@ export default function HomeScreen() {
 
         <View style={styles.startPanel}>
           <View style={styles.startPanelCopy}>
-            <Text style={styles.startPanelEyebrow}>READY TO GO</Text>
+            <Text style={styles.startPanelEyebrow}>SET A SESSION</Text>
             <Text style={styles.startPanelTitle}>{availableQuestions.length ? `${questionCount === "すべて" ? availableQuestions.length : Math.min(questionCount, availableQuestions.length)}問からスタート` : "対象の問題はありません"}</Text>
             <Text style={styles.startPanelText}>{weaknessMode ? "間違えた問題を復習" : `${formatFilter(category)} / ${formatFilter(difficulty)} / ${mode === "choice" ? "4択" : "入力"}`}</Text>
           </View>
@@ -735,58 +735,58 @@ const styles = StyleSheet.create({
   quizScrollWithAction: { paddingBottom: 18 },
   brandRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   brandCopy: { flex: 1 },
-  logoMark: { width: 42, height: 42, borderRadius: 13, backgroundColor: COLORS.blue, alignItems: "center", justifyContent: "center", shadowColor: COLORS.blue, shadowOpacity: 0.2, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 },
+  logoMark: { width: 42, height: 42, borderRadius: 8, backgroundColor: COLORS.ink, alignItems: "center", justifyContent: "center" },
   logoText: { color: "#FFFFFF", fontSize: 24, fontWeight: "900" },
   brandName: { color: COLORS.ink, fontSize: 16, fontWeight: "800", letterSpacing: 0.1 },
   brandSubline: { color: COLORS.muted, fontSize: 11, marginTop: 2 },
-  streakTopPill: { alignItems: "center", justifyContent: "center", backgroundColor: COLORS.amberSoft, borderRadius: 14, minWidth: 52, height: 48 },
+  streakTopPill: { alignItems: "center", justifyContent: "center", backgroundColor: COLORS.amberSoft, borderRadius: 8, minWidth: 52, height: 48 },
   streakTopValue: { color: COLORS.amber, fontSize: 18, fontWeight: "900", lineHeight: 20 },
   streakTopLabel: { color: COLORS.amber, fontSize: 10, fontWeight: "700" },
   heroBlock: { marginTop: 10, gap: 5 },
   eyebrow: { color: COLORS.blue, fontSize: 10, fontWeight: "900", letterSpacing: 1.7 },
   heroTitle: { color: COLORS.ink, fontSize: 30, fontWeight: "900", letterSpacing: -0.7 },
   heroSubtitle: { color: COLORS.muted, fontSize: 14, lineHeight: 21 },
-  rankPanel: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: COLORS.ink, borderRadius: 19, padding: 13 },
-  levelBadge: { width: 52, height: 52, borderRadius: 17, backgroundColor: COLORS.blue, alignItems: "center", justifyContent: "center" },
-  levelBadgeLabel: { color: "#C9D4FF", fontSize: 9, fontWeight: "900", letterSpacing: 1 },
+  rankPanel: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: COLORS.card, borderRadius: 10, borderWidth: 1, borderColor: COLORS.line, padding: 13 },
+  levelBadge: { width: 52, height: 52, borderRadius: 8, backgroundColor: COLORS.blue, alignItems: "center", justifyContent: "center" },
+  levelBadgeLabel: { color: "#FBEDE8", fontSize: 9, fontWeight: "900", letterSpacing: 1 },
   levelBadgeValue: { color: "#FFFFFF", fontSize: 23, fontWeight: "900", lineHeight: 25 },
   rankCopy: { flex: 1, gap: 5 },
   rankTitleRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   rankTitle: { color: "#FFFFFF", fontSize: 15, fontWeight: "900" },
-  pointsLabel: { color: "#A8B9FF", fontSize: 12, fontWeight: "900" },
-  levelTrack: { height: 6, borderRadius: 6, backgroundColor: "#3A4767", overflow: "hidden" },
-  levelFill: { height: "100%", borderRadius: 6, backgroundColor: "#8EA2FF" },
-  rankSubtext: { color: "#CBD3E9", fontSize: 10 },
+  pointsLabel: { color: COLORS.blue, fontSize: 12, fontWeight: "900" },
+  levelTrack: { height: 5, borderRadius: 5, backgroundColor: COLORS.line, overflow: "hidden" },
+  levelFill: { height: "100%", borderRadius: 5, backgroundColor: COLORS.blue },
+  rankSubtext: { color: COLORS.muted, fontSize: 10 },
   statRow: { flexDirection: "row", gap: 8 },
-  statChip: { flex: 1, paddingVertical: 12, paddingHorizontal: 10, backgroundColor: COLORS.card, borderRadius: 14, borderWidth: 1, borderColor: COLORS.line },
+  statChip: { flex: 1, paddingVertical: 12, paddingHorizontal: 10, backgroundColor: COLORS.card, borderRadius: 8, borderWidth: 1, borderColor: COLORS.line },
   statLabel: { color: COLORS.muted, fontSize: 10, fontWeight: "700", marginBottom: 3 },
   statValue: { fontSize: 18, fontWeight: "900" },
   cardHint: { color: COLORS.muted, fontSize: 11, lineHeight: 17 },
-  weaknessPanel: { borderRadius: 20, padding: 16, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.line, flexDirection: "row", alignItems: "center", gap: 14 },
+  weaknessPanel: { borderRadius: 10, padding: 16, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.line, flexDirection: "row", alignItems: "center", gap: 14 },
   weaknessPanelSelected: { backgroundColor: COLORS.amberSoft, borderColor: "#F0D59B" },
   weaknessCopy: { flex: 1, gap: 3 },
   weaknessEyebrow: { color: COLORS.amber, fontSize: 9, fontWeight: "900", letterSpacing: 1.4 },
   weaknessTitle: { color: COLORS.ink, fontSize: 16, fontWeight: "900" },
   weaknessText: { color: COLORS.muted, fontSize: 11, marginTop: 3 },
-  weaknessToggle: { minWidth: 64, paddingHorizontal: 13, paddingVertical: 11, borderRadius: 13, backgroundColor: COLORS.paper, borderWidth: 1, borderColor: COLORS.line, alignItems: "center" },
+  weaknessToggle: { minWidth: 64, paddingHorizontal: 13, paddingVertical: 11, borderRadius: 7, backgroundColor: COLORS.paper, borderWidth: 1, borderColor: COLORS.line, alignItems: "center" },
   weaknessToggleSelected: { backgroundColor: COLORS.amber, borderColor: COLORS.amber },
   weaknessToggleText: { color: COLORS.muted, fontSize: 13, fontWeight: "900" },
   weaknessToggleTextSelected: { color: "#FFFFFF" },
-  resumePanel: { borderRadius: 20, padding: 16, backgroundColor: COLORS.blueSoft, borderWidth: 1, borderColor: "#CFD9FF", flexDirection: "row", alignItems: "center", gap: 14 },
+  resumePanel: { borderRadius: 10, padding: 16, backgroundColor: COLORS.blueSoft, borderWidth: 1, borderColor: "#E4C9C1", flexDirection: "row", alignItems: "center", gap: 14 },
   resumeCopy: { flex: 1, gap: 3 },
   resumeEyebrow: { color: COLORS.blue, fontSize: 9, fontWeight: "900", letterSpacing: 1.4 },
   resumeTitle: { color: COLORS.ink, fontSize: 16, fontWeight: "900" },
   resumeText: { color: COLORS.muted, fontSize: 11, marginTop: 3 },
-  resumeButton: { backgroundColor: COLORS.blue, paddingHorizontal: 14, paddingVertical: 12, borderRadius: 13, flexDirection: "row", alignItems: "center", gap: 8 },
+  resumeButton: { backgroundColor: COLORS.ink, paddingHorizontal: 14, paddingVertical: 12, borderRadius: 7, flexDirection: "row", alignItems: "center", gap: 8 },
   resumeButtonText: { color: "#FFFFFF", fontSize: 13, fontWeight: "900" },
   resumeButtonArrow: { color: "#FFFFFF", fontSize: 17, fontWeight: "800" },
-  setupCard: { backgroundColor: COLORS.card, borderRadius: 22, borderWidth: 1, borderColor: COLORS.line, padding: 16, gap: 14 },
+  setupCard: { backgroundColor: COLORS.card, borderRadius: 10, borderWidth: 1, borderColor: COLORS.line, padding: 16, gap: 14 },
   sectionTitleWrap: { gap: 3 },
   sectionTitle: { color: COLORS.ink, fontSize: 18, fontWeight: "900" },
   modeRow: { flexDirection: "row", gap: 10 },
-  modeCard: { flex: 1, minHeight: 122, borderWidth: 1.5, borderColor: COLORS.line, borderRadius: 17, padding: 13, backgroundColor: COLORS.paper, position: "relative" },
+  modeCard: { flex: 1, minHeight: 122, borderWidth: 1.5, borderColor: COLORS.line, borderRadius: 9, padding: 13, backgroundColor: COLORS.paper, position: "relative" },
   modeCardSelected: { borderColor: COLORS.blue, backgroundColor: COLORS.blueSoft },
-  modeIcon: { width: 30, height: 30, borderRadius: 10, backgroundColor: "#E4E8F1", alignItems: "center", justifyContent: "center", marginBottom: 10 },
+  modeIcon: { width: 30, height: 30, borderRadius: 7, backgroundColor: "#E7E3DC", alignItems: "center", justifyContent: "center", marginBottom: 10 },
   modeIconSelected: { backgroundColor: COLORS.blue },
   modeIconText: { color: COLORS.ink, fontSize: 14, fontWeight: "900" },
   modeTitle: { color: COLORS.ink, fontSize: 15, fontWeight: "800" },
@@ -796,41 +796,41 @@ const styles = StyleSheet.create({
   fieldLabel: { color: COLORS.muted, fontSize: 12, fontWeight: "800" },
   fieldLabelSpaced: { marginTop: 2 },
   chipScroll: { gap: 8 },
-  selectChip: { borderWidth: 1, borderColor: COLORS.line, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 999, backgroundColor: COLORS.paper },
+  selectChip: { borderWidth: 1, borderColor: COLORS.line, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 7, backgroundColor: COLORS.paper },
   selectChipSelected: { backgroundColor: COLORS.blue, borderColor: COLORS.blue },
   selectChipText: { color: COLORS.muted, fontSize: 13, fontWeight: "800" },
   selectChipTextSelected: { color: "#FFFFFF" },
-  startPanel: { borderRadius: 22, padding: 17, backgroundColor: COLORS.ink, flexDirection: "row", alignItems: "center", gap: 14, shadowColor: COLORS.ink, shadowOpacity: 0.14, shadowRadius: 12, shadowOffset: { width: 0, height: 7 }, elevation: 3 },
+  startPanel: { borderRadius: 10, padding: 17, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.line, flexDirection: "row", alignItems: "center", gap: 14 },
   startPanelCopy: { flex: 1, gap: 3 },
-  startPanelEyebrow: { color: "#A8B9FF", fontSize: 9, fontWeight: "900", letterSpacing: 1.5 },
-  startPanelTitle: { color: "#FFFFFF", fontSize: 17, fontWeight: "900" },
-  startPanelText: { color: "#CBD3E9", fontSize: 11, marginTop: 3 },
-  startButton: { backgroundColor: COLORS.blue, paddingHorizontal: 15, paddingVertical: 13, borderRadius: 14, flexDirection: "row", alignItems: "center", gap: 9 },
+  startPanelEyebrow: { color: COLORS.blue, fontSize: 9, fontWeight: "900", letterSpacing: 1.5 },
+  startPanelTitle: { color: COLORS.ink, fontSize: 17, fontWeight: "900" },
+  startPanelText: { color: COLORS.muted, fontSize: 11, marginTop: 3 },
+  startButton: { backgroundColor: COLORS.ink, paddingHorizontal: 15, paddingVertical: 13, borderRadius: 7, flexDirection: "row", alignItems: "center", gap: 9 },
   startButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "900" },
-  startButtonArrow: { color: "#FFFFFF", fontSize: 18, fontWeight: "800" },
+  startButtonArrow: { color: "#F1C8BC", fontSize: 18, fontWeight: "800" },
   sourceText: { color: "#8994A9", fontSize: 10, lineHeight: 15, textAlign: "center", paddingHorizontal: 8 },
   quizHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   ghostButton: { paddingVertical: 8, paddingRight: 8 },
   ghostButtonText: { color: COLORS.muted, fontSize: 12, fontWeight: "800" },
   progressCount: { color: COLORS.ink, fontSize: 15, fontWeight: "900" },
-  streakPill: { backgroundColor: COLORS.amberSoft, borderRadius: 999, paddingHorizontal: 11, paddingVertical: 7 },
+  streakPill: { backgroundColor: COLORS.amberSoft, borderRadius: 7, paddingHorizontal: 11, paddingVertical: 7 },
   streakPillText: { color: COLORS.amber, fontSize: 11, fontWeight: "900" },
   progressTrack: { height: 6, borderRadius: 6, backgroundColor: COLORS.line, overflow: "hidden" },
   progressFill: { height: "100%", borderRadius: 6, backgroundColor: COLORS.blue },
   questionMeta: { flexDirection: "row", alignItems: "center", gap: 9, marginTop: 2 },
-  categoryBadge: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 },
+  categoryBadge: { borderRadius: 6, paddingHorizontal: 10, paddingVertical: 6 },
   categoryBadgeText: { fontSize: 11, fontWeight: "900" },
   difficultyText: { color: COLORS.muted, fontSize: 12, fontWeight: "700" },
-  questionCard: { backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.line, borderRadius: 23, padding: 21, paddingTop: 26, marginTop: 2, shadowColor: COLORS.ink, shadowOpacity: 0.05, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 1 },
-  noteLabel: { alignSelf: "flex-start", backgroundColor: COLORS.blueSoft, borderRadius: 7, paddingHorizontal: 9, paddingVertical: 5, marginBottom: 16 },
+  questionCard: { backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.line, borderRadius: 10, padding: 21, paddingTop: 26, marginTop: 2 },
+  noteLabel: { alignSelf: "flex-start", backgroundColor: COLORS.blueSoft, borderRadius: 4, paddingHorizontal: 9, paddingVertical: 5, marginBottom: 16 },
   noteLabelText: { color: COLORS.blue, fontSize: 10, fontWeight: "900", letterSpacing: 0.4 },
   questionText: { color: COLORS.ink, fontSize: 23, fontWeight: "900", lineHeight: 34, letterSpacing: -0.3 },
   answerList: { gap: 10 },
-  option: { backgroundColor: COLORS.card, borderWidth: 1.5, borderColor: COLORS.line, borderRadius: 17, minHeight: 58, padding: 10, flexDirection: "row", alignItems: "center", gap: 12 },
-  optionCorrect: { backgroundColor: COLORS.greenSoft, borderWidth: 1.5, borderColor: "#70C4A9", borderRadius: 17, minHeight: 58, padding: 10, flexDirection: "row", alignItems: "center", gap: 12 },
-  optionWrong: { backgroundColor: COLORS.redSoft, borderWidth: 1.5, borderColor: "#E6A8B1", borderRadius: 17, minHeight: 58, padding: 10, flexDirection: "row", alignItems: "center", gap: 12 },
-  optionDisabled: { backgroundColor: "#F4F5F8", borderWidth: 1.5, borderColor: "#EFF1F5", borderRadius: 17, minHeight: 58, padding: 10, flexDirection: "row", alignItems: "center", gap: 12, opacity: 0.55 },
-  optionLetter: { width: 34, height: 34, borderRadius: 12, backgroundColor: COLORS.paper, alignItems: "center", justifyContent: "center" },
+  option: { backgroundColor: COLORS.card, borderWidth: 1.5, borderColor: COLORS.line, borderRadius: 9, minHeight: 58, padding: 10, flexDirection: "row", alignItems: "center", gap: 12 },
+  optionCorrect: { backgroundColor: COLORS.greenSoft, borderWidth: 1.5, borderColor: "#8DBBA5", borderRadius: 9, minHeight: 58, padding: 10, flexDirection: "row", alignItems: "center", gap: 12 },
+  optionWrong: { backgroundColor: COLORS.redSoft, borderWidth: 1.5, borderColor: "#D89B8D", borderRadius: 9, minHeight: 58, padding: 10, flexDirection: "row", alignItems: "center", gap: 12 },
+  optionDisabled: { backgroundColor: "#ECEAE6", borderWidth: 1.5, borderColor: "#E1DED8", borderRadius: 9, minHeight: 58, padding: 10, flexDirection: "row", alignItems: "center", gap: 12, opacity: 0.55 },
+  optionLetter: { width: 34, height: 34, borderRadius: 6, backgroundColor: COLORS.paper, alignItems: "center", justifyContent: "center" },
   optionLetterCorrect: { backgroundColor: COLORS.green },
   optionLetterWrong: { backgroundColor: COLORS.red },
   optionLetterText: { color: COLORS.muted, fontSize: 13, fontWeight: "900" },
@@ -840,15 +840,15 @@ const styles = StyleSheet.create({
   optionTextWrong: { color: COLORS.red },
   inputArea: { gap: 10 },
   inputHint: { color: COLORS.muted, fontSize: 12, fontWeight: "700" },
-  textInput: { backgroundColor: COLORS.card, borderWidth: 1.5, borderColor: COLORS.line, borderRadius: 17, paddingHorizontal: 16, paddingVertical: 17, color: COLORS.ink, fontSize: 17, fontWeight: "700" },
-  primaryButton: { backgroundColor: COLORS.blue, minHeight: 54, borderRadius: 16, alignItems: "center", justifyContent: "center", paddingHorizontal: 18 },
+  textInput: { backgroundColor: COLORS.card, borderWidth: 1.5, borderColor: COLORS.line, borderRadius: 8, paddingHorizontal: 16, paddingVertical: 17, color: COLORS.ink, fontSize: 17, fontWeight: "700" },
+  primaryButton: { backgroundColor: COLORS.blue, minHeight: 54, borderRadius: 8, alignItems: "center", justifyContent: "center", paddingHorizontal: 18 },
   primaryButtonDisabled: { backgroundColor: "#BBC5E2" },
   primaryButtonText: { color: "#FFFFFF", fontSize: 15, fontWeight: "900" },
-  feedbackCard: { borderRadius: 21, padding: 16, gap: 14, marginTop: 2 },
+  feedbackCard: { borderRadius: 10, padding: 16, gap: 14, marginTop: 2 },
   feedbackCorrect: { backgroundColor: COLORS.greenSoft, borderWidth: 1, borderColor: "#B7E5D2" },
   feedbackWrong: { backgroundColor: COLORS.redSoft, borderWidth: 1, borderColor: "#F1C8CE" },
   feedbackHeader: { flexDirection: "row", alignItems: "center", gap: 11 },
-  feedbackIcon: { width: 38, height: 38, borderRadius: 13, alignItems: "center", justifyContent: "center" },
+  feedbackIcon: { width: 38, height: 38, borderRadius: 7, alignItems: "center", justifyContent: "center" },
   feedbackIconCorrect: { backgroundColor: COLORS.green },
   feedbackIconWrong: { backgroundColor: COLORS.red },
   feedbackIconText: { color: "#FFFFFF", fontSize: 21, fontWeight: "900" },
@@ -859,19 +859,19 @@ const styles = StyleSheet.create({
   answerRevealText: { color: COLORS.ink, fontSize: 19, fontWeight: "900" },
   explanationText: { color: COLORS.ink, fontSize: 13, lineHeight: 20 },
   rewardRow: { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" },
-  rewardText: { color: COLORS.blue, backgroundColor: COLORS.blueSoft, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 5, fontSize: 11, fontWeight: "900" },
-  rewardStreakText: { color: COLORS.amber, backgroundColor: COLORS.amberSoft, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 5, fontSize: 11, fontWeight: "900" },
+  rewardText: { color: COLORS.blue, backgroundColor: COLORS.blueSoft, borderRadius: 5, paddingHorizontal: 9, paddingVertical: 5, fontSize: 11, fontWeight: "900" },
+  rewardStreakText: { color: COLORS.amber, backgroundColor: COLORS.amberSoft, borderRadius: 5, paddingHorizontal: 9, paddingVertical: 5, fontSize: 11, fontWeight: "900" },
   quizActionBar: { minHeight: 74, paddingHorizontal: 20, paddingVertical: 10, backgroundColor: COLORS.card, borderTopWidth: 1, borderTopColor: COLORS.line, flexDirection: "row", alignItems: "center", gap: 12, shadowColor: COLORS.ink, shadowOpacity: 0.08, shadowRadius: 10, shadowOffset: { width: 0, height: -4 }, elevation: 5 },
   quizActionHint: { flex: 1, gap: 2 },
   quizActionHintTitle: { color: COLORS.ink, fontSize: 12, fontWeight: "900" },
   quizActionHintText: { color: COLORS.muted, fontSize: 10 },
-  nextButtonFixed: { backgroundColor: COLORS.ink, borderRadius: 14, minHeight: 50, paddingHorizontal: 15, flexDirection: "row", alignItems: "center", justifyContent: "space-between", minWidth: 142 },
+  nextButtonFixed: { backgroundColor: COLORS.ink, borderRadius: 7, minHeight: 50, paddingHorizontal: 15, flexDirection: "row", alignItems: "center", justifyContent: "space-between", minWidth: 142 },
   nextButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "900" },
   nextButtonArrow: { color: "#A8B9FF", fontSize: 22, fontWeight: "800" },
-  summaryHero: { backgroundColor: COLORS.blueSoft, borderRadius: 24, borderWidth: 1, borderColor: "#CFD9FF", padding: 22, alignItems: "center", gap: 8, marginTop: 8 },
+  summaryHero: { backgroundColor: COLORS.blueSoft, borderRadius: 10, borderWidth: 1, borderColor: "#E4C9C1", padding: 22, alignItems: "center", gap: 8, marginTop: 8 },
   summaryTitle: { color: COLORS.ink, fontSize: 30, fontWeight: "900" },
   summarySubtitle: { color: COLORS.muted, fontSize: 13, lineHeight: 19, textAlign: "center" },
-  summaryScoreCircle: { width: 104, height: 104, borderRadius: 52, backgroundColor: COLORS.blue, alignItems: "center", justifyContent: "center", flexDirection: "row", marginTop: 8 },
+  summaryScoreCircle: { width: 104, height: 104, borderRadius: 10, backgroundColor: COLORS.blue, alignItems: "center", justifyContent: "center", flexDirection: "row", marginTop: 8 },
   summaryScore: { color: "#FFFFFF", fontSize: 37, fontWeight: "900", letterSpacing: -1 },
   summaryScoreUnit: { color: "#C9D4FF", fontSize: 15, fontWeight: "900", marginTop: 17 },
   summaryScoreLabel: { color: COLORS.blue, fontSize: 13, fontWeight: "900" },
