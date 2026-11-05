@@ -36,7 +36,7 @@
 4. 学習の勢いを止めない、短いコピーと即時フィードバック。
 
 ### Color Philosophy
-参考サイトの編集的な情報整理とiPadOSのLiquid Glassを合わせ、紙色の背景に`expo-blur`の実際の`BlurView`を重ねる。主要なランク、統計、再開、弱点、開始面はぼかしを通した半透明面、細い反射境界、控えめな影で構成する。濃紺のダッシュボード面やAI生成テンプレートに見えるグローは避け、見出しと操作に赤茶を使う。正解は深い緑、注意は黄土色、誤答は赤茶で区別する。
+指定された `oraoraoraaa/liquid-glass` の `tokens.css` と `GlassPanel` / `glass-lens` の設計をExpoへ移植する。`--glass-bg: rgba(12,16,24,0.52)`、`--glass-border: rgba(255,255,255,0.16)`、暗色のApple系アクセント、黒い浮遊影、上部の白いlens highlightを採用し、CSSの`backdrop-filter: blur(16px) saturate(150%)`に相当する実装として`expo-blur`の`BlurView`を使用する。主要なランク、統計、再開、弱点、開始面はぼかしを通した半透明面、細い反射境界、控えめな影で構成する。
 
 ### Layout Paradigm
 中央寄せのグリッドではなく、左端を揃えた縦の学習レール。画面上部に進捗の細いレール、中央に問題カード、下部に回答操作を置く。
