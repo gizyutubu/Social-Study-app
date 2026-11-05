@@ -53,26 +53,26 @@ type AnswerState = {
 };
 
 const COLORS = {
-  ink: "#F5F5F7",
-  muted: "rgba(255,255,255,0.68)",
-  paper: "#07080C",
-  card: "rgba(12,16,24,0.52)",
-  line: "rgba(255,255,255,0.16)",
-  blue: "#0A84FF",
-  blueSoft: "rgba(10,132,255,0.18)",
-  green: "#30D158",
-  greenSoft: "rgba(48,209,88,0.18)",
-  red: "#FF453A",
-  redSoft: "rgba(255,69,58,0.18)",
-  amber: "#FF9F0A",
-  amberSoft: "rgba(255,159,10,0.18)",
+  ink: "#20201E",
+  muted: "#706D67",
+  paper: "#E9E7E2",
+  card: "rgba(255,255,255,0.72)",
+  line: "rgba(255,255,255,0.88)",
+  blue: "#B34C3E",
+  blueSoft: "#F5E5E0",
+  green: "#2F765D",
+  greenSoft: "#E6F0EA",
+  red: "#B34C3E",
+  redSoft: "#F8E8E3",
+  amber: "#A16C2E",
+  amberSoft: "#F4EADB",
 };
 
 const categoryColors: Record<Category, { background: string; text: string }> = {
-  公民: { background: "rgba(10,132,255,0.18)", text: "#64D2FF" },
-  歴史: { background: "rgba(255,159,10,0.18)", text: "#FF9F0A" },
-  地理: { background: "rgba(48,209,88,0.18)", text: "#30D158" },
-  人物史: { background: "rgba(175,82,222,0.18)", text: "#BF5AF2" },
+  公民: { background: "#EAF0FF", text: "#2F5BFF" },
+  歴史: { background: "#FFF1E6", text: "#C7682B" },
+  地理: { background: "#E8F7F0", text: "#14866B" },
+  人物史: { background: "#F3EDFF", text: "#7541B6" },
 };
 
 const questionCounts: QuestionCount[] = [5, 10, 15, 20, "すべて"];
@@ -117,8 +117,7 @@ function GlassSurface({
   intensity?: number;
 }) {
   return (
-    <BlurView intensity={intensity} tint="dark" style={[styles.glassSurface, style]}>
-      <View pointerEvents="none" style={styles.glassLensHighlight} />
+    <BlurView intensity={intensity} tint="light" style={[styles.glassSurface, style]}>
       {children}
     </BlurView>
   );
@@ -758,8 +757,7 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  glassSurface: { overflow: "hidden", backgroundColor: "rgba(12,16,24,0.52)" },
-  glassLensHighlight: { position: "absolute", top: 0, left: 0, right: 0, height: 42, backgroundColor: "rgba(255,255,255,0.08)", borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.45)", opacity: 0.75 },
+  glassSurface: { overflow: "hidden" },
   quizScreen: { flex: 1, backgroundColor: COLORS.paper },
   loadingScreen: { flex: 1, alignItems: "center", justifyContent: "center", gap: 16, backgroundColor: COLORS.paper },
   loadingText: { color: COLORS.muted, fontSize: 13 },
@@ -779,9 +777,9 @@ const styles = StyleSheet.create({
   eyebrow: { color: COLORS.blue, fontSize: 10, fontWeight: "900", letterSpacing: 1.7 },
   heroTitle: { color: COLORS.ink, fontSize: 30, fontWeight: "900", letterSpacing: -0.7 },
   heroSubtitle: { color: COLORS.muted, fontSize: 14, lineHeight: 21 },
-  rankPanel: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: "rgba(12,16,24,0.52)", borderRadius: 18, borderWidth: 1, borderColor: COLORS.line, padding: 13, shadowColor: "#000000", shadowOpacity: 0.35, shadowRadius: 24, shadowOffset: { width: 0, height: 12 }, elevation: 3 },
-  levelBadge: { width: 52, height: 52, borderRadius: 12, backgroundColor: COLORS.blue, alignItems: "center", justifyContent: "center" },
-  levelBadgeLabel: { color: "rgba(255,255,255,0.68)", fontSize: 9, fontWeight: "900", letterSpacing: 1 },
+  rankPanel: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: "rgba(255,255,255,0.32)", borderRadius: 18, borderWidth: 1, borderColor: COLORS.line, padding: 13, shadowColor: "#77746D", shadowOpacity: 0.12, shadowRadius: 16, shadowOffset: { width: 0, height: 7 }, elevation: 2 },
+  levelBadge: { width: 52, height: 52, borderRadius: 8, backgroundColor: COLORS.blue, alignItems: "center", justifyContent: "center" },
+  levelBadgeLabel: { color: "#FBEDE8", fontSize: 9, fontWeight: "900", letterSpacing: 1 },
   levelBadgeValue: { color: "#FFFFFF", fontSize: 23, fontWeight: "900", lineHeight: 25 },
   rankCopy: { flex: 1, gap: 5 },
   rankTitleRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
@@ -795,7 +793,7 @@ const styles = StyleSheet.create({
   statLabel: { color: COLORS.muted, fontSize: 10, fontWeight: "700", marginBottom: 3 },
   statValue: { fontSize: 18, fontWeight: "900" },
   cardHint: { color: COLORS.muted, fontSize: 11, lineHeight: 17 },
-  weaknessPanel: { borderRadius: 18, padding: 16, backgroundColor: "rgba(12,16,24,0.52)", borderWidth: 1, borderColor: COLORS.line, flexDirection: "row", alignItems: "center", gap: 14, shadowColor: "#000000", shadowOpacity: 0.28, shadowRadius: 20, shadowOffset: { width: 0, height: 10 }, elevation: 2 },
+  weaknessPanel: { borderRadius: 18, padding: 16, backgroundColor: "rgba(255,255,255,0.34)", borderWidth: 1, borderColor: COLORS.line, flexDirection: "row", alignItems: "center", gap: 14, shadowColor: "#77746D", shadowOpacity: 0.1, shadowRadius: 15, shadowOffset: { width: 0, height: 7 }, elevation: 2 },
   weaknessPanelSelected: { backgroundColor: COLORS.amberSoft, borderColor: "#F0D59B" },
   weaknessCopy: { flex: 1, gap: 3 },
   weaknessEyebrow: { color: COLORS.amber, fontSize: 9, fontWeight: "900", letterSpacing: 1.4 },
@@ -807,7 +805,7 @@ const styles = StyleSheet.create({
   weaknessToggleText: { color: COLORS.muted, fontSize: 13, fontWeight: "900" },
   weaknessToggleTextSelected: { color: "#FFFFFF" },
   weaknessToggleTextDisabled: { color: COLORS.muted },
-  resumePanel: { borderRadius: 18, padding: 16, backgroundColor: "rgba(12,16,24,0.52)", borderWidth: 1, borderColor: COLORS.line, flexDirection: "row", alignItems: "center", gap: 14, shadowColor: "#000000", shadowOpacity: 0.28, shadowRadius: 20, shadowOffset: { width: 0, height: 10 }, elevation: 2 },
+  resumePanel: { borderRadius: 18, padding: 16, backgroundColor: "rgba(255,255,255,0.34)", borderWidth: 1, borderColor: "rgba(255,255,255,0.92)", flexDirection: "row", alignItems: "center", gap: 14, shadowColor: "#77746D", shadowOpacity: 0.1, shadowRadius: 15, shadowOffset: { width: 0, height: 7 }, elevation: 2 },
   resumeCopy: { flex: 1, gap: 3 },
   resumeEyebrow: { color: COLORS.blue, fontSize: 9, fontWeight: "900", letterSpacing: 1.4 },
   resumeTitle: { color: COLORS.ink, fontSize: 16, fontWeight: "900" },
@@ -835,7 +833,7 @@ const styles = StyleSheet.create({
   selectChipSelected: { backgroundColor: COLORS.blue, borderColor: COLORS.blue },
   selectChipText: { color: COLORS.muted, fontSize: 13, fontWeight: "800" },
   selectChipTextSelected: { color: "#FFFFFF" },
-  startPanel: { borderRadius: 18, padding: 17, backgroundColor: "rgba(12,16,24,0.52)", borderWidth: 1, borderColor: COLORS.line, flexDirection: "row", alignItems: "center", gap: 14, shadowColor: "#000000", shadowOpacity: 0.35, shadowRadius: 24, shadowOffset: { width: 0, height: 12 }, elevation: 3 },
+  startPanel: { borderRadius: 18, padding: 17, backgroundColor: "rgba(255,255,255,0.34)", borderWidth: 1, borderColor: COLORS.line, flexDirection: "row", alignItems: "center", gap: 14, shadowColor: "#77746D", shadowOpacity: 0.1, shadowRadius: 15, shadowOffset: { width: 0, height: 7 }, elevation: 2 },
   startPanelCopy: { flex: 1, gap: 3 },
   startPanelEyebrow: { color: COLORS.blue, fontSize: 9, fontWeight: "900", letterSpacing: 1.5 },
   startPanelTitle: { color: COLORS.ink, fontSize: 17, fontWeight: "900" },
